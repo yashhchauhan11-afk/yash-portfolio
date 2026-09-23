@@ -11,17 +11,21 @@ import useRouter from './useRouter'
 function App() {
   const { path, navigate } = useRouter()
 
-  if (path.startsWith('/blog')) {
-    return <BlogList navigate={navigate} />
-  }
-
   return (
     <div className="min-h-screen bg-space-bg text-space-text">
-      <Hero />
-      <About />
-      <Projects />
-      <Skills />
-      <MessageBox />
+      {path.startsWith('/blog') ? (
+        <BlogList navigate={navigate} />
+      ) : (
+        <main>
+          <Hero />
+          <About />
+          <Projects />
+          <Skills />
+          <MessageBox />
+        </main>
+      )}
+
+      {/* Persistent floating UI — available across all routes */}
       <VoiceNav />
       <Terminal />
     </div>

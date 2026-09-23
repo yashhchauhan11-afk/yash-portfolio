@@ -10,6 +10,7 @@ function getHelp() {
     '  whoami        who is running this thing',
     '  skills        what i actually know',
     '  projects      things i\'ve shipped',
+    '  blog          read articles and essays',
     '  contact       jump to the message box',
     '  sudo hire-me  ambitious. let\'s see.',
     '  clear         wipe this screen',
@@ -81,10 +82,26 @@ export default function Terminal() {
       print(SKILLS_OUTPUT)
     } else if (normalized === 'projects') {
       print(PROJECTS_OUTPUT)
+    } else if (normalized === 'blog') {
+      print(['navigating to blog...'])
+      setOpen(false)
+      if (window.location.pathname !== '/blog') {
+        window.history.pushState({}, '', '/blog')
+        window.dispatchEvent(new PopStateEvent('popstate'))
+        window.scrollTo(0, 0)
+      }
     } else if (normalized === 'contact') {
       print(['scrolling down...'])
       setOpen(false)
-      document.getElementById('say-hello')?.scrollIntoView({ behavior: 'smooth' })
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/')
+        window.dispatchEvent(new PopStateEvent('popstate'))
+        setTimeout(() => {
+          document.getElementById('say-hello')?.scrollIntoView({ behavior: 'smooth' })
+        }, 150)
+      } else {
+        document.getElementById('say-hello')?.scrollIntoView({ behavior: 'smooth' })
+      }
     } else if (normalized === 'sudo hire-me') {
       print([
         '[sudo] password for visitor: ********',

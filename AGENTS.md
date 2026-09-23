@@ -24,7 +24,7 @@ normally do, this document wins.
 - Node.js
 - Vercel serverless functions (`/api`)
 - Telegram Bot API (contact form backend)
-- Google Gemini API (arriving in Step 7, not yet added)
+- Google Gemini API (added in Step 5)
 
 ## 3. DESIGN SYSTEM — reuse these exact tokens everywhere, never invent new ones
 
@@ -98,7 +98,7 @@ folder structure yourself before assuming a file does or doesn't exist.
    entirely — don't show a broken feature.
 5. No new npm packages, no API keys, no backend changes for this step.
 
-**▶ Step 4 (current — do this now): About section + Blog**
+**Step 4 (in progress — items 1-3 and 8 done; items 4-7 and 9 still pending, return to these after Step 5):**
 
 1. Add `src/components/About.jsx`, `id="about"`, placed in App.jsx right
    after Hero. Placeholder content only (education: GEC Patan/GTU,
@@ -155,7 +155,39 @@ folder structure yourself before assuming a file does or doesn't exist.
 10. No changes to the Telegram contact form or existing sections beyond
     adding About and wiring the new routes into App.jsx.
 
-**Step 5 (next, after Step 4 is confirmed working):**
+**▶ Step 5 (current — do this now): Smart voice assistant backend**
+
+1. Broaden VoiceNav's local keyword matching immediately (cheap fix, ship
+   this regardless of the rest): match on individual keywords ("work",
+   "portfolio" → projects; "background", "who are you" → about) using
+   substring checks, not full-phrase equality. This becomes the fallback
+   layer.
+
+2. Add `api/assistant.js` — Vercel serverless function reading
+   GEMINI_API_KEY from env (already added to the Vercel dashboard by
+   Yash). Takes { transcript } in the POST body, sends it to Gemini's
+   generateContent with a system instruction: classify the transcript
+   into one of [projects, skills, about, blog, contact, none], and write
+   a short (<15 words) friendly reply in the site's tone. Respond as
+   strict JSON: {"destination": "...", "reply": "..."}.
+
+3. Update VoiceNav.jsx: after transcript is captured, POST it to
+   /api/assistant. Show the returned `reply` in a small card near the mic
+   button, styled like Terminal.jsx (font-mono, space-surface background,
+   space-accent border). If `destination` is a known section, navigate/
+   scroll there (respecting the route-awareness from Step 4 item 9).
+
+4. If the API call fails, times out, or the response isn't valid JSON,
+   silently fall back to the local keyword matching from item 1 — the
+   mic button must never fully break due to a network/API issue.
+
+5. GEMINI_API_KEY is already set in the Vercel dashboard — do not create,
+   guess, or hardcode it, just reference process.env.GEMINI_API_KEY.
+
+6. Keep api/assistant.js general (not voice-nav-specific) — it will be
+   reused by the "Chat with Yash" panel in the last step.
+
+**Step 6 (next, after Step 5 is confirmed working):**
 1. Install `@react-three/fiber` and `@react-three/drei` (Three.js React
    renderer) and `matter-js` (2D physics). Tell me what you're installing
    and why before running the install.
@@ -175,7 +207,7 @@ folder structure yourself before assuming a file does or doesn't exist.
    animation and disable drag-inertia (card can still be repositioned,
    just without the bounce/float).
 
-**Step 6 (after Step 5):**
+**Step 7 (after Step 6):**
 1. Add `src/components/GithubActivity.jsx`. Important constraint: GitHub's
    public REST API does **not** expose the contribution-calendar graph
    without an authenticated GraphQL call — do not attempt to fake or
@@ -186,32 +218,30 @@ folder structure yourself before assuming a file does or doesn't exist.
    don't already have it from the repo remote.
 2. Render the result as floating 3D bars (bar height = star count or
    event count) inside a Three.js canvas, same visual language as Step
-   5's hero scene.
+   6's hero scene.
 3. Add a "skills constellation" view inside `Skills.jsx`: position each
    skill from the Step 3 skills data as a node in a simple radial 3D
    layout. Click a node to show/expand a short description. Reuse the
    skills data from Step 3 — do not hardcode a second copy.
-4. Same performance guardrails as Step 5.
+4. Same performance guardrails as Step 6.
 
-**Step 7 (last):**
-1. Add `api/chat.js` — a Vercel serverless function reading
-   `GEMINI_API_KEY` from environment variables, calling the Gemini API's
-   `generateContent` endpoint. Build the system context from the same
-   bio/skills/projects data already used in `Projects.jsx`/`Skills.jsx` —
-   single source of truth, don't duplicate it with different wording.
+**Step 8 (last):**
+1. Reuse `api/assistant.js` (from Step 5) with the already-configured
+   `GEMINI_API_KEY` rather than creating a separate endpoint or asking
+   for a new key. Extend `api/assistant.js` to handle general chat
+   queries using system context built from the same bio/skills/projects
+   data already used in `Projects.jsx`/`Skills.jsx` — single source of
+   truth, don't duplicate it with different wording.
 2. Add `src/components/ChatWithYash.jsx` — a floating chat panel,
    visually distinct from `Terminal.jsx` (proper chat bubbles, not a CLI
-   look), calling `/api/chat`.
+   look), calling `/api/assistant`.
 3. Keep v1 simple: plain request/response, no streaming (no SSE). Disable
    the input while a request is in flight so a visitor can't fire
    overlapping requests — that's the only rate-limiting needed for v1.
-4. **Do not** create, guess, or hardcode a `GEMINI_API_KEY` value. I will
-   add it to the Vercel dashboard myself when this step starts — ask me
-   to confirm it's set before testing against production.
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
 
-Current secrets: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Step 7 adds
+Current secrets: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Step 5 adds
 `GEMINI_API_KEY`. This rule covers every one of them, present and future:
 
 - NEVER expose, print, log, hardcode, commit, or push any secret's value.
