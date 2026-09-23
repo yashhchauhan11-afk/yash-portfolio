@@ -98,7 +98,7 @@ folder structure yourself before assuming a file does or doesn't exist.
    entirely — don't show a broken feature.
 5. No new npm packages, no API keys, no backend changes for this step.
 
-**Step 4 (in progress — items 1-3 and 8 done; items 4-7 and 9 still pending, return to these after Step 5):**
+**✅ Step 4 (done):** About section + Blog.
 
 1. Add `src/components/About.jsx`, `id="about"`, placed in App.jsx right
    after Hero. Placeholder content only (education: GEC Patan/GTU,
@@ -155,7 +155,7 @@ folder structure yourself before assuming a file does or doesn't exist.
 10. No changes to the Telegram contact form or existing sections beyond
     adding About and wiring the new routes into App.jsx.
 
-**▶ Step 5 (current — do this now): Smart voice assistant backend**
+**✅ Step 5 (done):** Smart voice assistant backend.
 
 1. Broaden VoiceNav's local keyword matching immediately (cheap fix, ship
    this regardless of the rest): match on individual keywords ("work",
@@ -187,7 +187,7 @@ folder structure yourself before assuming a file does or doesn't exist.
 6. Keep api/assistant.js general (not voice-nav-specific) — it will be
    reused by the "Chat with Yash" panel in the last step.
 
-**Step 6 (next, after Step 5 is confirmed working):**
+**▶ Step 6 (next): 3D zero-gravity physics scene**
 1. Install `@react-three/fiber` and `@react-three/drei` (Three.js React
    renderer) and `matter-js` (2D physics). Tell me what you're installing
    and why before running the install.

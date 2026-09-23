@@ -77,7 +77,7 @@ Respond in strict JSON with no markdown formatting or backticks:
       const cleaned = rawText.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim()
       parsed = JSON.parse(cleaned)
     } catch (parseErr) {
-      console.error('Failed to parse Gemini JSON:', rawText)
+      console.error('Failed to parse Gemini JSON:', rawText, parseErr)
       return res.status(502).json({ error: 'Invalid JSON returned from model', raw: rawText })
     }
 
