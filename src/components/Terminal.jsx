@@ -1,23 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-
-// Edit these two lists with your real skills/projects before launch.
-const SKILLS_OUTPUT = [
-  'languages     python, javascript',
-  'frontend      react, tailwind',
-  'backend       firebase, fastapi',
-  'automation    n8n, google apps script',
-  'embedded      iot, sensor systems',
-  '',
-  'currently learning: order-flow forecasting, hawkes processes',
-]
-
-const PROJECTS_OUTPUT = [
-  '[1] missed-call lead-recovery workflow — n8n automation',
-  '[2] campus platform — academics + events + ai viva simulator',
-  '[3] order-flow imbalance forecasting — quant research',
-  '',
-  '(edit this list in Terminal.jsx with your real projects)',
-]
+import { PROJECTS_OUTPUT } from './Projects'
+import { SKILLS_OUTPUT } from './Skills'
 
 const BANNER = ['yash-terminal v1.0.0', "type 'help' to see what this does", '']
 

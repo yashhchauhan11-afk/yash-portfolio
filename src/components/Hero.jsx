@@ -24,7 +24,7 @@ export default function Hero() {
         </p>
         <div className="flex gap-4">
           <a
-            href="#work"
+            href="#projects"
             className="px-6 py-3 rounded-full bg-space-accent text-space-bg font-body font-medium hover:opacity-90 transition-opacity"
           >
             See the work
