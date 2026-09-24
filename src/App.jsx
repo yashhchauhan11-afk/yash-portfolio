@@ -1,6 +1,7 @@
 import Hero from './components/Hero'
 import About from './components/About'
 import Projects from './components/Projects'
+import GithubActivity from './components/GithubActivity'
 import Skills from './components/Skills'
 import MessageBox from './components/MessageBox'
 import VoiceNav from './components/VoiceNav'
@@ -25,6 +26,7 @@ function App() {
         <Hero />
         <About />
         <Projects />
+        <GithubActivity />
         <Skills />
         <MessageBox />
       </main>

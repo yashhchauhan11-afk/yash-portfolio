@@ -221,25 +221,43 @@ folder structure yourself before assuming a file does or doesn't exist.
    `src/index.css`): freeze the floating animation, disable drag-inertia
    — card can still be repositioned, just without bounce/float.
 
-**▶ Step 7 (next): GitHub Activity + Skills Constellation**
-1. Add `src/components/GithubActivity.jsx`. Important constraint: GitHub's
-   public REST API does **not** expose the contribution-calendar graph
-   without an authenticated GraphQL call — do not attempt to fake or
-   scrape it. Instead use the public, unauthenticated endpoint
-   `GET https://api.github.com/users/{username}/repos` (repo names, star
-   counts, primary language) or `GET .../events/public` (recent public
-   activity). Ask me for my GitHub username before wiring this up if you
-   don't already have it from the repo remote.
-2. Render the result as floating 3D bars (bar height = star count or
-   event count) inside a Three.js canvas, same visual language as Step
-   6's hero scene.
-3. Add a "skills constellation" view inside `Skills.jsx`: position each
-   skill from the Step 3 skills data as a node in a simple radial 3D
-   layout. Click a node to show/expand a short description. Reuse the
-   skills data from Step 3 — do not hardcode a second copy.
-4. Same performance guardrails as Step 6.
+**✅ Step 7 (done):** GitHub activity + skills constellation.
 
-**Step 8 (last):**
+1. Add `src/components/GithubActivity.jsx`. GitHub's public REST API does
+   NOT expose the private contribution-calendar graph (that needs
+   authenticated GraphQL) — do not fake or scrape it. Use
+   `GET https://api.github.com/users/{username}/repos` (repo names, star
+   counts, primary language) instead. Get the username from the git
+   remote (yashhchauhan11-afk) — don't ask unless it's ambiguous.
+
+2. IMPORTANT — rate limits: unauthenticated GitHub API calls are capped
+   at 60 requests/hour per IP. Cache the fetched result in
+   sessionStorage (with a timestamp) and reuse it for the rest of the
+   session instead of re-fetching on every render/navigation. If the
+   fetch fails (rate-limited or offline), fail silently — show nothing or
+   a minimal placeholder, never a broken error state.
+
+3. Render the result as floating 3D bars (height = star count) inside a
+   Three.js canvas, same visual language (colors, mesh style) as
+   Hero3D.jsx. Lazy-load this component exactly like Hero3D was
+   (React.lazy + Suspense) — same first-paint reasoning applies, don't
+   repeat Step 6's bundle-size mistake.
+
+4. In `Skills.jsx`: ADD a 3D radial "constellation" view below the
+   existing flat skill list — do NOT replace the flat list. The list
+   stays as the fast-scan default; the constellation is a supplementary
+   visual. Position each skill (reuse Step 3's data, no duplicate copy)
+   as a clickable node; click shows/expands a short description.
+
+5. Pointer-event check (learned from Step 6's parallax bug): make sure
+   no absolutely-positioned element silently overlaps and blocks clicks
+   on the constellation's nodes or the GithubActivity canvas. Test this
+   explicitly, don't assume it's fine.
+
+6. Same performance guardrails as Hero3D: max 5-7 3D elements per canvas,
+   no postprocessing, no shadows.
+
+**▶ Step 8 (current — do this now): Chat with Yash assistant**
 1. Reuse `api/assistant.js` (from Step 5) with the already-configured
    `GEMINI_API_KEY` rather than creating a separate endpoint or asking
    for a new key. Extend `api/assistant.js` to handle general chat
