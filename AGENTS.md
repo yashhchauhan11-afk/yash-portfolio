@@ -187,27 +187,41 @@ folder structure yourself before assuming a file does or doesn't exist.
 6. Keep api/assistant.js general (not voice-nav-specific) — it will be
    reused by the "Chat with Yash" panel in the last step.
 
-**▶ Step 6 (next): 3D zero-gravity physics scene**
-1. Install `@react-three/fiber` and `@react-three/drei` (Three.js React
-   renderer) and `matter-js` (2D physics). Tell me what you're installing
-   and why before running the install.
-2. In `Hero.jsx`, replace the placeholder gradient-blob `<div>` with a
-   `<Canvas>` containing 3–5 simple floating meshes (icosahedron, torus,
-   sphere) in `space-accent`/`space-warm` colors. Slow rotation + gentle
-   bobbing via `useFrame`. Add a subtle parallax tilt that responds to
-   pointer position — lerp it, don't snap.
-3. Performance guardrails (this runs on an 8 GB RAM machine): max 5–7
-   meshes, no postprocessing, no shadows, no heavy textures.
-4. Add `src/components/DraggableCard.jsx`: a 2D draggable "business card"
-   element, plain HTML/CSS (NOT inside the Three.js canvas), positioned
-   absolutely. Use matter-js only for the physics calculation (velocity,
-   edge bounce) and sync the result to the card's CSS transform manually
-   — don't use matter.js's own canvas renderer.
-5. Respect `prefers-reduced-motion`: if set, freeze the floating
-   animation and disable drag-inertia (card can still be repositioned,
-   just without the bounce/float).
+**✅ Step 6 (done):** Zero-gravity hero + draggable card
 
-**Step 7 (after Step 6):**
+1. Install `@react-three/fiber`, `@react-three/drei`, and `matter-js`.
+   Explain what each does before installing.
+
+2. Lazy-load the 3D scene: wrap the new Canvas component in `React.lazy`
+   + `Suspense`, using the CURRENT gradient-blob `<div>` in Hero.jsx as
+   the Suspense fallback (don't delete it — reuse it). This keeps first
+   paint fast since the bundle has grown with the blog dependencies, and
+   it doubles as a clean "not loaded yet" state.
+
+3. Inside the lazy-loaded Canvas: 3-5 floating meshes (icosahedron,
+   torus, sphere) in `space-accent`/`space-warm` colors. Slow rotation +
+   gentle bobbing via `useFrame`. Subtle pointer-based parallax tilt —
+   lerp it, don't snap.
+
+4. Performance guardrails (8GB RAM machine): max 5-7 meshes, no
+   postprocessing, no shadows, no heavy textures.
+
+5. Add `src/components/DraggableCard.jsx`: a 2D draggable card, plain
+   HTML/CSS (NOT inside the Three.js canvas), positioned absolutely. Use
+   `matter-js` only for the physics calculation (velocity, edge bounce),
+   synced manually to the card's CSS transform. Use Pointer Events
+   (`onPointerDown`/`onPointerMove`/`onPointerUp`), not mouse-only
+   events, so dragging works on mobile/touch too.
+
+6. Card content: minimal placeholder (name + one-line tagline, same tone
+   as Hero's intro) — mark clearly for Yash to edit, don't invent new
+   bio details.
+
+7. Respect `prefers-reduced-motion` (reuse the existing pattern in
+   `src/index.css`): freeze the floating animation, disable drag-inertia
+   — card can still be repositioned, just without bounce/float.
+
+**▶ Step 7 (next): GitHub Activity + Skills Constellation**
 1. Add `src/components/GithubActivity.jsx`. Important constraint: GitHub's
    public REST API does **not** expose the contribution-calendar graph
    without an authenticated GraphQL call — do not attempt to fake or

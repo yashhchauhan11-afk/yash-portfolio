@@ -1,16 +1,35 @@
-export default function Hero() {
-  return (
-    <section className="min-h-[90vh] flex items-center px-6 md:px-16 relative overflow-hidden">
-      {/* Placeholder orbit — this spot becomes the react-three-fiber zero-gravity
-          scene in a later build step. Kept as a plain gradient for now so the
-          layout and spacing are locked in before 3D is added. */}
-      <div
-        aria-hidden="true"
-        className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-30 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #6EE7C0 0%, transparent 70%)' }}
-      />
+import { lazy, Suspense, useRef } from 'react'
 
-      <div className="max-w-2xl relative z-10">
+const Hero3D = lazy(() => import('./Hero3D'))
+const DraggableCard = lazy(() => import('./DraggableCard'))
+
+export default function Hero() {
+  const heroRef = useRef(null)
+
+  return (
+    <section
+      ref={heroRef}
+      className="min-h-[90vh] flex items-center px-6 md:px-16 relative overflow-hidden"
+    >
+      {/* 3D Zero-gravity scene lazy-loaded with current gradient blob as Suspense fallback */}
+      <Suspense
+        fallback={
+          <div
+            aria-hidden="true"
+            className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-30 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #6EE7C0 0%, transparent 70%)' }}
+          />
+        }
+      >
+        <Hero3D containerRef={heroRef} />
+      </Suspense>
+
+      {/* 2D Draggable Profile Card with Matter.js physics lazy-loaded with null fallback */}
+      <Suspense fallback={null}>
+        <DraggableCard containerRef={heroRef} />
+      </Suspense>
+
+      <div className="max-w-2xl relative z-10 pointer-events-auto">
         <p className="font-body text-space-muted text-sm mb-4 tracking-wide">
           CSE / IoT Engineer — GTU, Gujarat
         </p>
