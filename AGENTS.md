@@ -257,19 +257,39 @@ folder structure yourself before assuming a file does or doesn't exist.
 6. Same performance guardrails as Hero3D: max 5-7 3D elements per canvas,
    no postprocessing, no shadows.
 
-**▶ Step 8 (current — do this now): Chat with Yash assistant**
-1. Reuse `api/assistant.js` (from Step 5) with the already-configured
-   `GEMINI_API_KEY` rather than creating a separate endpoint or asking
-   for a new key. Extend `api/assistant.js` to handle general chat
-   queries using system context built from the same bio/skills/projects
-   data already used in `Projects.jsx`/`Skills.jsx` — single source of
-   truth, don't duplicate it with different wording.
-2. Add `src/components/ChatWithYash.jsx` — a floating chat panel,
-   visually distinct from `Terminal.jsx` (proper chat bubbles, not a CLI
-   look), calling `/api/assistant`.
-3. Keep v1 simple: plain request/response, no streaming (no SSE). Disable
-   the input while a request is in flight so a visitor can't fire
-   overlapping requests — that's the only rate-limiting needed for v1.
+**▶ Step 8 (current — do this now, last step): "Chat with Yash" panel**
+
+1. Extend `api/assistant.js` to accept a `mode` field in the POST body:
+   `"voice"` or `"chat"`. Mode `"voice"` must behave EXACTLY as it does
+   today (unchanged) — short <15-word reply, same JSON contract,
+   {"destination": "...", "reply": "..."}. Do not regress VoiceNav's
+   existing behavior. Mode `"chat"` uses the same JSON shape but allows a
+   longer, more conversational `reply`, built from the same bio/skills/
+   projects data already used in About.jsx/Projects.jsx/Skills.jsx —
+   single source of truth, no duplicated content with different wording.
+
+2. For `"chat"` mode, accept an optional `history` array (last ~6
+   messages: {role, text}) in the request body so multi-turn context
+   works — the visitor shouldn't have to repeat context each message.
+   `"voice"` mode stays single-shot, no history needed.
+
+3. Add `src/components/ChatWithYash.jsx`: a floating chat panel with a
+   toggle button. Terminal already occupies bottom-right, VoiceNav
+   occupies bottom-left — position this without overlapping either
+   (e.g. stacked above Terminal with clear spacing). Explicitly test this
+   on a mobile viewport for crowding/overlap before considering it done.
+
+4. Proper chat-bubble UI (visually distinct from Terminal's CLI look),
+   calling `/api/assistant` with `mode: "chat"`. Plain request/response,
+   no streaming/SSE.
+
+5. Disable the input while a request is in flight — no overlapping
+   requests. If the API call fails, show a clear inline error bubble in
+   the chat stream ("Something went wrong, try again") — there's no
+   keyword-fallback equivalent for open chat like VoiceNav has.
+
+6. No new npm dependencies, no new API key — reuse GEMINI_API_KEY and
+   existing design tokens.
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
 

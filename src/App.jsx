@@ -6,6 +6,7 @@ import Skills from './components/Skills'
 import MessageBox from './components/MessageBox'
 import VoiceNav from './components/VoiceNav'
 import Terminal from './components/Terminal'
+import ChatWithYash from './components/ChatWithYash'
 import BlogList from './components/BlogList'
 import BlogPost from './components/BlogPost'
 import useRouter from './useRouter'
@@ -40,6 +41,7 @@ function App() {
       {/* Persistent floating UI — available across all routes */}
       <VoiceNav />
       <Terminal />
+      <ChatWithYash />
     </div>
   )
 }
