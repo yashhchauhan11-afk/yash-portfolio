@@ -10,6 +10,8 @@ const SECTION_IDS = {
   skills: 'skills',
   about: 'about',
   contact: 'say-hello',
+  'github-activity': 'github-activity',
+  github: 'github-activity',
 }
 
 export default function ChatWithYash() {
@@ -53,7 +55,14 @@ export default function ChatWithYash() {
       window.history.pushState({}, '', '/')
       window.dispatchEvent(new PopStateEvent('popstate'))
       setTimeout(() => {
-        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+        const el = document.getElementById(targetId)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+        } else {
+          requestAnimationFrame(() => {
+            document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+          })
+        }
       }, 150)
     } else {
       document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
