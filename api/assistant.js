@@ -1,5 +1,5 @@
 // Vercel serverless function.
-// Reads GEMINI_API_KEY from environment variables (configured in Vercel dashboard).
+// Reads OPENROUTER_KEY from environment variables (configured in Vercel dashboard).
 // Serves as the smart backend for voice navigation (Step 5) and ChatWithYash (Step 8).
 
 export default async function handler(req, res) {
@@ -14,9 +14,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Query, message, or transcript is required' })
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.OPENROUTER_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured' })
+    return res.status(500).json({ error: 'OPENROUTER_KEY is not configured' })
   }
 
   const isChat = mode === 'chat'
@@ -62,90 +62,96 @@ Tone & Formatting Guidelines:
 - Respond in strict JSON with no markdown fences or backticks:
 {"destination": "projects" | "skills" | "about" | "blog" | "contact" | "none", "reply": "string"}`
 
-  // Build contents payload
-  let contents = []
+  // Build OpenAI-compatible messages array
+  const messages = [
+    {
+      role: 'system',
+      content: isChat ? chatSystemInstruction : voiceSystemInstruction,
+    },
+  ]
 
   if (isChat && Array.isArray(history)) {
-    // Multi-turn context for chat mode: accept last ~6 messages
     const recentHistory = history.slice(-6)
     for (const item of recentHistory) {
       if (!item || !item.text) continue
-      const role = item.role === 'assistant' || item.role === 'model' ? 'model' : 'user'
-      contents.push({
+      const role = item.role === 'assistant' || item.role === 'model' ? 'assistant' : 'user'
+      messages.push({
         role,
-        parts: [{ text: String(item.text).trim() }],
+        content: String(item.text).trim(),
       })
     }
   }
 
   // Current user query is appended as the latest message
-  contents.push({
+  messages.push({
     role: 'user',
-    parts: [{ text: query }],
+    content: query,
   })
 
-  // Ensure alternating roles for multi-turn if history is present
-  if (contents.length > 1) {
-    const sanitized = []
-    let lastRole = null
-    for (const msg of contents) {
-      if (msg.role !== lastRole) {
-        sanitized.push(msg)
-        lastRole = msg.role
-      } else {
-        // If two consecutive messages have the same role, combine their text
-        const prev = sanitized[sanitized.length - 1]
-        prev.parts[0].text += `\n${msg.parts[0].text}`
+  try {
+    const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions'
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://yash-portfolio-six-flax.vercel.app',
+      'X-Title': 'Yash Chauhan Portfolio',
+    }
+
+    const payload = {
+      model: 'openrouter/free',
+      messages,
+      temperature: isChat ? 0.4 : 0.2,
+      response_format: { type: 'json_object' },
+    }
+
+    let response = await fetch(openRouterUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+
+    // If the selected free model doesn't support response_format: { type: 'json_object' }, retry without it
+    if (!response.ok && response.status === 400) {
+      const errPeek = await response.clone().text()
+      if (errPeek.toLowerCase().includes('response_format')) {
+        delete payload.response_format
+        response = await fetch(openRouterUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        })
       }
     }
-    // If first message is model, prepend a dummy greeting user turn or remove it
-    if (sanitized.length > 0 && sanitized[0].role === 'model') {
-      sanitized.shift()
-    }
-    contents = sanitized.length > 0 ? sanitized : [{ role: 'user', parts: [{ text: query }] }]
-  }
-
-  try {
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent'
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{ text: isChat ? chatSystemInstruction : voiceSystemInstruction }],
-        },
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: isChat ? 0.4 : 0.2,
-        },
-      }),
-    })
 
     if (!response.ok) {
       const errText = await response.text()
-      console.error('Gemini API error response:', errText)
-      return res.status(response.status).json({ error: 'Gemini API call failed' })
+      console.error('OpenRouter API error response:', errText)
+      return res.status(response.status).json({ error: 'OpenRouter API call failed' })
     }
 
     const data = await response.json()
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+
+    // Server-side only log for debugging underlying model chosen by the free router
+    if (data.model) {
+      console.log('OpenRouter model used:', data.model)
+    }
+
+    const rawText = data.choices?.[0]?.message?.content?.trim()
 
     if (!rawText) {
-      return res.status(502).json({ error: 'Empty response from Gemini' })
+      return res.status(502).json({ error: 'Empty response from model' })
     }
 
     let parsed
     try {
-      // Remove any unintentional markdown fences if present
-      const cleaned = rawText.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim()
-      parsed = JSON.parse(cleaned)
+      // Strip markdown code fences if present
+      const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+      // Extract the first JSON object block {...} via regex for resilient parsing
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+      const targetJson = jsonMatch ? jsonMatch[0] : cleaned
+      parsed = JSON.parse(targetJson)
     } catch (parseErr) {
-      console.error('Failed to parse Gemini JSON:', rawText, parseErr)
+      console.error('Failed to parse OpenRouter JSON:', rawText, parseErr)
       return res.status(502).json({ error: 'Invalid JSON returned from model', raw: rawText })
     }
 
