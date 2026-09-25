@@ -1,36 +1,65 @@
 export const PROJECTS = [
   {
     id: 1,
+    era: 'current',
+    year: 2026,
     title: 'Missed-Call Lead-Recovery Workflow',
-    category: 'n8n Automation',
+    category: 'AI + Automation + Business Systems',
     description:
-      'Automated workflow capturing missed inbound calls, enriching lead context, and triggering instant CRM sync and messaging follow-ups via n8n.',
-    tags: ['n8n', 'Webhooks', 'CRM Integration', 'Automation'],
+      "A working AI-powered customer recovery workflow designed to prevent missed calls from becoming lost leads. It reconnects with customers through WhatsApp, understands their requirements, provides business-specific support, and escalates to a human when the AI can't resolve the request.",
+    tags: [
+      'n8n',
+      'Twilio',
+      'WhatsApp API',
+      'AI',
+      'Automation',
+      'Webhooks',
+      'Google Workspace',
+    ],
   },
   {
     id: 2,
-    title: 'Campus Platform',
-    category: 'Full-Stack & AI',
+    era: 'current',
+    year: 2026,
+    title: 'Quantitative R&D',
+    category: 'Quantitative Research',
     description:
-      'Unified campus hub consolidating student academics, campus event management, and an AI-driven viva examination simulator.',
-    tags: ['React', 'Firebase', 'AI Simulator', 'Tailwind'],
+      'A foundational quantitative research track exploring market microstructure through Order Flow Imbalance analysis and Hawkes self-exciting point processes. Rather than jumping straight into complex trading systems, this project builds the conceptual and engineering fundamentals — limit order book dynamics, statistical validation, and event-driven forecasting — needed to approach advanced quantitative research with confidence.',
+    tags: [
+      'Python',
+      'Market Microstructure',
+      'Order Flow Imbalance',
+      'Hawkes Processes',
+      'Statistics',
+    ],
   },
   {
     id: 3,
-    title: 'Order-Flow Imbalance Forecasting',
-    category: 'Quant Research',
+    era: 'older',
+    year: 2024,
+    title: 'Spotify Clone',
+    category: 'Web Development / Frontend',
     description:
-      'Quantitative research pipeline analyzing high-frequency limit order book dynamics and order-flow imbalance using Hawkes point processes.',
-    tags: ['Python', 'Market Microstructure', 'Hawkes Processes', 'Statistics'],
+      'An early frontend project reproducing a real-world music-streaming interface — built to strengthen frontend fundamentals and UI implementation skills.',
+    tags: [],
+  },
+  {
+    id: 4,
+    era: 'older',
+    year: 2024,
+    title: 'Airbnb Clone',
+    category: 'Full-Stack / Web Development',
+    description:
+      'An early full-stack project experimenting with building a larger, real-world-style web application end to end.',
+    tags: [],
   },
 ]
 
 export const PROJECTS_OUTPUT = [
-  '[1] missed-call lead-recovery workflow — n8n automation',
-  '[2] campus platform — academics + events + ai viva simulator',
-  '[3] order-flow imbalance forecasting — quant research',
-  '',
-  '(edit this list in Projects.jsx with your real projects)',
+  '[1] spotify clone — web development / frontend',
+  '[2] airbnb clone — full-stack / web development',
+  '[3] missed-call lead-recovery workflow — ai + automation + business systems',
+  '[4] quantitative r&d — quantitative research',
 ]
 
 export default function Projects() {
@@ -70,16 +99,18 @@ export default function Projects() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-4 border-t border-space-surface-2/60">
-                {project.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="font-mono text-xs px-2.5 py-1 rounded-full bg-space-surface-2 text-space-muted"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              {project.tags && project.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-space-surface-2/60">
+                  {project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="font-mono text-xs px-2.5 py-1 rounded-full bg-space-surface-2 text-space-muted"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -257,7 +257,7 @@ folder structure yourself before assuming a file does or doesn't exist.
 6. Same performance guardrails as Hero3D: max 5-7 3D elements per canvas,
    no postprocessing, no shadows.
 
-**▶ Step 8 (current — do this now, last step): "Chat with Yash" panel**
+**✅ Step 8 (done):** "Chat with Yash" panel
 
 1. Extend `api/assistant.js` to accept a `mode` field in the POST body:
    `"voice"` or `"chat"`. Mode `"voice"` must behave EXACTLY as it does
@@ -290,6 +290,21 @@ folder structure yourself before assuming a file does or doesn't exist.
 
 6. No new npm dependencies, no new API key — reuse GEMINI_API_KEY and
    existing design tokens.
+
+**▶ Step 9 (current — do this now): Cinematic Projects redesign**
+
+Phase A (now): Restructure PROJECTS data in Projects.jsx to 4 real
+projects (2 current, 2 older), sync Terminal.jsx and api/assistant.js.
+Rendering stays as the existing grid for now — content only.
+
+Phase B (next, after Phase A confirmed): Rebuild the rendering into a
+CSS-3D depth-based horizontal carousel (perspective/blur/scale/opacity
+based on distance from focused index), NOT Three.js/Canvas — this stays
+lightweight DOM+CSS since it's text-heavy content, not 3D geometry.
+Current projects centered/sharp, older projects recede to the sides.
+Support arrow nav, drag, touch swipe, reduced-motion fallback (instant/
+simple crossfade instead of the depth animation).
+
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
 

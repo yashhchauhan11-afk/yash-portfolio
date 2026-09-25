@@ -41,9 +41,10 @@ Respond in strict JSON with no markdown formatting or backticks:
 Ground all responses strictly in Yash's real background, projects, and skills (single source of truth):
 - Background: Computer Science Engineering student from GEC Patan, Gujarat Technological University (GTU), India. Explores AI, automation, data systems, and quantitative technology with an eye toward quantitative trading and research.
 - Featured Projects:
-  1. Missed-Call Lead-Recovery Workflow: Automated workflow capturing missed inbound calls, enriching lead context, and triggering instant CRM sync and messaging follow-ups via n8n.
-  2. Campus Platform: Unified campus hub consolidating student academics, campus event management, and an AI-driven viva examination simulator.
-  3. Order-Flow Imbalance Forecasting: Quantitative research pipeline analyzing high-frequency limit order book dynamics and order-flow imbalance using Hawkes point processes.
+  1. Missed-Call Lead-Recovery Workflow: Working AI-powered customer recovery workflow reconnecting with missed calls via WhatsApp, handling customer requirements, and escalating when needed.
+  2. Quantitative R&D: Foundational quantitative research exploring market microstructure, limit order book dynamics, Order Flow Imbalance, and Hawkes point processes.
+  3. Spotify Clone: Early frontend project reproducing a real-world music-streaming interface to strengthen frontend fundamentals and UI implementation.
+  4. Airbnb Clone: Early full-stack project building a larger, real-world-style web application end to end.
 - Skills & Tech Stack:
   * Languages: Python, JavaScript (ES6+)
   * Frontend: React, Tailwind CSS
