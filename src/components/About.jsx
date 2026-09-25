@@ -9,24 +9,31 @@ export default function About() {
           About Me
         </h2>
 
-        {/* 
-          TODO FOR YASH:
-          Rewrite this placeholder section with your personal bio, real background,
-          and exact journey. Do not invent unverified biographical claims.
-        */}
         <div className="space-y-6 font-body text-space-muted text-base md:text-lg leading-relaxed">
           <p>
-            I am a CSE and IoT engineering student at Government Engineering College (GEC)
-            Patan, affiliated with Gujarat Technological University (GTU).
+            I'm Yash, a Computer Science Engineering student who learns by
+            exploring, building, and occasionally breaking things just to understand
+            how they work. I'm drawn to AI, automation, data, and the systems
+            underneath them, turning experiments into projects and projects into
+            better questions. I'm also exploring quantitative technology — where
+            math, algorithms, data, and software meet — with an eye toward
+            quantitative trading and research.
           </p>
           <p>
-            My current focus is at the intersection of automation architectures, market
-            microstructure, and quantitative modeling — exploring order-flow forecasting and
-            resilient data pipelines.
+            Currently exploring quantitative technology — digging into market
+            microstructure, order flow, time-series and stochastic processes,
+            options, statistics, and systematic risk to understand how quantitative
+            trading systems work from the inside. Alongside the research, I'm
+            building the engineering foundation with Python, Java, and C++ for where
+            I want to go next.
           </p>
           <p>
-            I build practical software, intelligent workflows, and automated tools designed
-            to bridge complex backend systems with clean, responsive user experiences.
+            Curiosity drives most of what I build. I'm fascinated by how the best
+            engineers and technology companies turn difficult ideas into real
+            systems — and I naturally end up asking, 'How did they build this, and
+            where could I fit into the picture?' Every project is my way of getting
+            closer: understanding the technology, experimenting with it, and
+            eventually building something that earns its own place.
           </p>
         </div>
 
@@ -38,11 +45,11 @@ export default function About() {
           </div>
           <div className="p-4 rounded-xl bg-space-surface border border-space-surface-2">
             <span className="text-space-accent block text-xs uppercase mb-1">Discipline</span>
-            <span className="text-space-text">CSE & IoT Engineering</span>
+            <span className="text-space-text">Computer Science Engineering</span>
           </div>
           <div className="p-4 rounded-xl bg-space-surface border border-space-surface-2">
             <span className="text-space-accent block text-xs uppercase mb-1">Current Focus</span>
-            <span className="text-space-text">Automation & Quant Systems</span>
+            <span className="text-space-text">Quantitative Technology</span>
           </div>
         </div>
       </div>

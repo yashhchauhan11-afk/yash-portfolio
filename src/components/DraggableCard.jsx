@@ -257,7 +257,7 @@ export default function DraggableCard({ containerRef }) {
         Yash Chauhan
       </h3>
       <p className="font-body text-xs text-space-muted leading-relaxed mb-4">
-        CSE & IoT Engineer — building low-latency automation and quantitative systems.
+        CSE student — turning curiosity into code, systems & experiments.
       </p>
 
       <div className="flex items-center justify-between pt-3 border-t border-space-surface-2 text-[10px] font-mono text-space-muted">

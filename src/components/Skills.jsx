@@ -19,10 +19,6 @@ export const SKILLS_DATA = [
     category: 'Automation',
     items: ['n8n', 'Google Apps Script'],
   },
-  {
-    category: 'Embedded',
-    items: ['IoT', 'Sensor Systems'],
-  },
 ]
 
 export const SKILL_DESCRIPTIONS = {
@@ -34,8 +30,6 @@ export const SKILL_DESCRIPTIONS = {
   FastAPI: 'High-throughput asynchronous Python microservices with automatic OpenAPI schema generation.',
   n8n: 'Self-hosted workflow automation connecting custom webhooks, REST APIs, and distributed event pipelines.',
   'Google Apps Script': 'Cloud automation macros streamlining Google Sheets, Gmail, and workspace data flows.',
-  IoT: 'Microcontroller programming, hardware telemetry, edge nodes, and MQTT/HTTP communication.',
-  'Sensor Systems': 'Hardware interfacing with analog/digital sensors, signal acquisition, and real-time calibration.',
 }
 
 export const CURRENTLY_LEARNING = 'Order-flow forecasting, Hawkes processes'
@@ -45,7 +39,6 @@ export const SKILLS_OUTPUT = [
   'frontend      react, tailwind',
   'backend       firebase, fastapi',
   'automation    n8n, google apps script',
-  'embedded      iot, sensor systems',
   '',
   'currently learning: order-flow forecasting, hawkes processes',
 ]
