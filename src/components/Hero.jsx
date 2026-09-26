@@ -31,15 +31,13 @@ export default function Hero() {
 
       <div className="max-w-2xl relative z-10 pointer-events-auto">
         <p className="font-body text-space-muted text-sm mb-4 tracking-wide">
-          CSE / IoT Engineer — GTU, Gujarat
+          CSE Student — Exploring Systems, AI & Quantitative Computing
         </p>
         <h1 className="font-display text-5xl md:text-7xl font-medium leading-[1.05] mb-6">
-          Yash Chauhan builds things that shouldn't exist yet.
+          I build the questions I can't stop thinking about.
         </h1>
         <p className="font-body text-space-muted text-lg max-w-lg mb-10 leading-relaxed">
-          Automation, embedded systems, and AI-driven products — from a
-          missed-call recovery workflow to an order-flow forecasting engine.
-          This is where the working ones live.
+          From AI-powered automation to market microstructure, I learn by turning curiosity into working systems. Every project is an experiment—something to understand, break, rebuild, and carry into whatever comes next.
         </p>
         <div className="flex gap-4">
           <a

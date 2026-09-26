@@ -299,6 +299,9 @@ folder structure yourself before assuming a file does or doesn't exist.
    - Natural pointer & touch swipe navigation with unified mouse/touch listeners, live delta tracking (`dragDeltaXRef`), rubber-band boundary resistance, and responsive swipe threshold (`SWIPE_THRESHOLD = 40`).
    - Mobile-optimized layout with adaptive stage height, responsive card dimensions, touch protection (`touch-pan-y`), and vertical overflow support (`overflow-y-auto overscroll-contain`).
    - Full accessibility support: keyboard arrow navigation (`←` / `→`), clickable pagination dots, and instant crossfade fallback for `prefers-reduced-motion`.
+3. Hero copy alignment:
+   - Updated `src/components/Hero.jsx` (eyebrow, main headline, and supporting narrative) to reflect focus on systems, AI, and quantitative computing.
+   - Confirmed `src/components/DraggableCard.jsx` was verified to preserve Yash Chauhan's name anchor, subtitle, and `GEC Patan / GTU` tag.
 
 **▶ Step 10 (next): Skills constellation & copy refinement + endpoint verification**
 
