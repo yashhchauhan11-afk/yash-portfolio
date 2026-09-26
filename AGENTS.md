@@ -291,19 +291,20 @@ folder structure yourself before assuming a file does or doesn't exist.
 6. No new npm dependencies, no new API key — reuse GEMINI_API_KEY and
    existing design tokens.
 
-**▶ Step 9 (current — do this now): Cinematic Projects redesign**
+**✅ Step 9 (done): Cinematic Projects redesign — 3D horizontal timeline carousel**
 
-Phase A (now): Restructure PROJECTS data in Projects.jsx to 4 real
-projects (2 current, 2 older), sync Terminal.jsx and api/assistant.js.
-Rendering stays as the existing grid for now — content only.
+1. Restructured `PROJECTS` data in `Projects.jsx` to 4 real projects (2 current, 2 older), synchronized with `Terminal.jsx` (`PROJECTS_OUTPUT`) and `api/assistant.js` as the single source of truth.
+2. Rebuilt rendering using pure CSS 3D transforms and React state (no Three.js/canvas overhead):
+   - Perspective stage with depth-based spatial scaling (`scale`), blur (`blur`), opacity, and 3D card tilt (`rotateY`).
+   - Natural pointer & touch swipe navigation with unified mouse/touch listeners, live delta tracking (`dragDeltaXRef`), rubber-band boundary resistance, and responsive swipe threshold (`SWIPE_THRESHOLD = 40`).
+   - Mobile-optimized layout with adaptive stage height, responsive card dimensions, touch protection (`touch-pan-y`), and vertical overflow support (`overflow-y-auto overscroll-contain`).
+   - Full accessibility support: keyboard arrow navigation (`←` / `→`), clickable pagination dots, and instant crossfade fallback for `prefers-reduced-motion`.
 
-Phase B (next, after Phase A confirmed): Rebuild the rendering into a
-CSS-3D depth-based horizontal carousel (perspective/blur/scale/opacity
-based on distance from focused index), NOT Three.js/Canvas — this stays
-lightweight DOM+CSS since it's text-heavy content, not 3D geometry.
-Current projects centered/sharp, older projects recede to the sides.
-Support arrow nav, drag, touch swipe, reduced-motion fallback (instant/
-simple crossfade instead of the depth animation).
+**▶ Step 10 (next): Skills constellation & copy refinement + endpoint verification**
+
+1. Update `Skills.jsx` constellation descriptions and `About.jsx` copy to align deeply with real background, current quantitative R&D, and production automation workflows.
+2. Diagnose and verify the live assistant chat endpoint in production (`/api/assistant`), ensuring fallback router reliability across Gemini and OpenRouter free tiers.
+3. Perform full-site responsive and accessibility regression testing across mobile, tablet, and desktop viewports.
 
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
