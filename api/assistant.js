@@ -46,11 +46,12 @@ Ground all responses strictly in Yash's real background, projects, and skills (s
   3. Spotify Clone: Early frontend project reproducing a real-world music-streaming interface to strengthen frontend fundamentals and UI implementation.
   4. Airbnb Clone: Early full-stack project building a larger, real-world-style web application end to end.
 - Skills & Tech Stack:
-  * Languages: Python, JavaScript (ES6+)
-  * Frontend: React, Tailwind CSS
-  * Backend: Firebase (Firestore, Auth), FastAPI (asynchronous microservices)
-  * Automation: n8n, Google Apps Script
-  * Active Focus / Currently Learning: Order-flow forecasting, Hawkes processes
+  * Web Development: React, Node.js, Express.js, MongoDB, Tailwind CSS, Vite, HTML, CSS, JavaScript, Bootstrap
+  * Java & Computer Science: Java, OOP, Data Structures & Algorithms, Collections, Problem Solving
+  * Quantitative Computing: Python, NumPy, Pandas, SciPy, statsmodels, scikit-learn, Matplotlib, market microstructure, Order Flow / OFI, time-series, statistical modeling, stochastic processes, options & Greeks
+  * AI & Automation: Gemini API, OpenRouter, n8n, webhooks, prompt engineering, Telegram Bot API, Twilio, WhatsApp Business API
+  * Developer Tools & Platforms: Git, GitHub, VS Code, IntelliJ IDEA, Eclipse, Postman, MySQL Workbench, Vercel, Chrome DevTools
+  * Exploring Next: Future systems & quantitative directions (C++, Linux, SQL, Polars, PyArrow, DuckDB, QuantLib, kdb+/q, low-latency networking)
 - Contact & GitHub:
   * Visitors can message Yash directly via the Telegram contact form on this site ("Say hello" section).
   * GitHub: github.com/yashhchauhan11-afk

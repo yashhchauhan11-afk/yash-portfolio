@@ -303,11 +303,13 @@ folder structure yourself before assuming a file does or doesn't exist.
    - Updated `src/components/Hero.jsx` (eyebrow, main headline, and supporting narrative) to reflect focus on systems, AI, and quantitative computing.
    - Confirmed `src/components/DraggableCard.jsx` was verified to preserve Yash Chauhan's name anchor, subtitle, and `GEC Patan / GTU` tag.
 
-**▶ Step 10 (next): Skills constellation & copy refinement + endpoint verification**
+**✅ Step 10 (done): Real Skills content + compact redesign**
 
-1. Update `Skills.jsx` constellation descriptions and `About.jsx` copy to align deeply with real background, current quantitative R&D, and production automation workflows.
-2. Diagnose and verify the live assistant chat endpoint in production (`/api/assistant`), ensuring fallback router reliability across Gemini and OpenRouter free tiers.
-3. Perform full-site responsive and accessibility regression testing across mobile, tablet, and desktop viewports.
+1. Redesigned skill-item rendering: replaced large button-style items with compact tag chips reusing Projects.jsx pill styling (`font-mono text-xs px-2.5 py-1 rounded-full bg-space-surface-2 text-space-muted border border-space-surface-2`), wrapped in `flex-wrap gap-2`.
+2. Replaced `SKILLS_DATA` with 5 real categories: Web Development, Java & Computer Science, Quantitative Computing (with structured groups: Currently Using, Currently Learning, Research Areas), AI & Automation, and Developer Tools & Platforms.
+3. Added distinct "Exploring Next" aspirational section with dashed warm styling and tooltips (C++, Linux, SQL, Polars, PyArrow, DuckDB, QuantLib, kdb+/q, Low-latency networking).
+4. Added `grid-flow-row-dense` to ensure gapless 3-column grid layout across large desktop viewports.
+5. Synchronized 3D constellation dynamically for 5 categories (max 7 meshes: 5 category stars + 2 satellites), updated `SKILLS_OUTPUT` for Terminal.jsx, updated `api/assistant.js` summary, and replaced section intro with real narrative.
 
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram

@@ -26,6 +26,42 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* Zero-g mobile orb float & pulse animations */
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(110, 231, 192, 0.25), inset 0 0 6px rgba(110, 231, 192, 0.1);
+    border-color: rgba(110, 231, 192, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(110, 231, 192, 0.5), inset 0 0 10px rgba(110, 231, 192, 0.2);
+    border-color: rgba(110, 231, 192, 0.9);
+  }
+}
+
+@keyframes fadeContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-orb-idle {
+  animation: orbFloat 3.6s ease-in-out infinite, orbPulse 2.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -33,3 +69,4 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+

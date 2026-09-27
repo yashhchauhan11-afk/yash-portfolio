@@ -142,9 +142,24 @@ function ConstellationLines({ positions }) {
   )
 }
 
+// Helper to safely extract satellite skills whether category uses flat items or nested groups
+function getCategorySatelliteSkills(group, descriptions) {
+  if (!group) return []
+  const allItems = group.groups
+    ? (group.groups[0]?.items || [])
+    : (group.items || [])
+
+  if (descriptions) {
+    const featured = allItems.filter((item) => Boolean(descriptions[item]))
+    if (featured.length >= 2) return featured.slice(0, 2)
+  }
+  return allItems.slice(0, 2)
+}
+
 // 3D Scene Group with lerped parallax
 function ConstellationScene({
   skillsData,
+  skillDescriptions,
   activeCategory,
   onSelectCategory,
   activeSkill,
@@ -175,7 +190,10 @@ function ConstellationScene({
   const activePos = categoryPositions[activeIndex]
 
   // Active category's skills (max 2 satellite nodes)
-  const activeSkills = skillsData[activeIndex]?.items || []
+  const activeSkills = useMemo(
+    () => getCategorySatelliteSkills(skillsData[activeIndex], skillDescriptions),
+    [skillsData, activeIndex, skillDescriptions]
+  )
   const satellitePositions = useMemo(() => {
     if (!activePos) return [[0, 0, 0], [0, 0, 0]]
     return [
@@ -219,7 +237,8 @@ function ConstellationScene({
           isActive={group.category === activeCategory}
           onSelect={(cat) => {
             onSelectCategory(cat)
-            const firstSkill = skillsData.find((g) => g.category === cat)?.items[0]
+            const targetGroup = skillsData.find((g) => g.category === cat)
+            const firstSkill = getCategorySatelliteSkills(targetGroup, skillDescriptions)[0]
             if (firstSkill) onSelectSkill(firstSkill)
           }}
           reducedMotion={reducedMotion}
@@ -247,10 +266,10 @@ export default function SkillsConstellation({
   containerRef,
 }) {
   const [activeCategory, setActiveCategory] = useState(
-    () => skillsData[0]?.category || 'Languages'
+    () => skillsData[0]?.category || 'Web Development'
   )
   const [activeSkill, setActiveSkill] = useState(
-    () => skillsData[0]?.items[0] || 'Python'
+    () => getCategorySatelliteSkills(skillsData[0], skillDescriptions)[0] || 'React'
   )
 
   const [reducedMotion, setReducedMotion] = useState(() => {
@@ -295,7 +314,8 @@ export default function SkillsConstellation({
                 type="button"
                 onClick={() => {
                   setActiveCategory(group.category)
-                  if (group.items[0]) setActiveSkill(group.items[0])
+                  const firstSkill = getCategorySatelliteSkills(group, skillDescriptions)[0]
+                  if (firstSkill) setActiveSkill(firstSkill)
                 }}
                 className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition-all ${
                   isActive
@@ -331,6 +351,7 @@ export default function SkillsConstellation({
 
           <ConstellationScene
             skillsData={skillsData}
+            skillDescriptions={skillDescriptions}
             activeCategory={activeCategory}
             onSelectCategory={setActiveCategory}
             activeSkill={activeSkill}
@@ -361,7 +382,7 @@ export default function SkillsConstellation({
 
         {/* Skill selector within active category */}
         <div className="flex items-center gap-2 shrink-0">
-          {currentGroup?.items.map((skill) => (
+          {getCategorySatelliteSkills(currentGroup, skillDescriptions).map((skill) => (
             <button
               key={skill}
               type="button"
@@ -380,3 +401,4 @@ export default function SkillsConstellation({
     </div>
   )
 }
+

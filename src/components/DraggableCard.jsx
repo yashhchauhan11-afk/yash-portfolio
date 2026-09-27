@@ -15,6 +15,11 @@ export default function DraggableCard({ containerRef }) {
     if (typeof window === 'undefined') return false
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   })
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.matchMedia('(min-width: 768px)').matches
+  })
+  const [isExpanded, setIsExpanded] = useState(false)
 
   // Card dimensions (fixed baseline for Matter rigid body)
   const CARD_WIDTH = 280
@@ -32,6 +37,30 @@ export default function DraggableCard({ containerRef }) {
   }, [])
 
   useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+
+    function handleDesktopChange(e) {
+      setIsDesktop(e.matches)
+    }
+
+    mql.addEventListener('change', handleDesktopChange)
+    return () => mql.removeEventListener('change', handleDesktopChange)
+  }, [])
+
+  // Close mobile expanded card on Escape key
+  useEffect(() => {
+    if (!isExpanded) return
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setIsExpanded(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isExpanded])
+
+  useEffect(() => {
+    if (!isDesktop) return
     const container = containerRef?.current
     if (!container || !cardRef.current) return
 
@@ -140,7 +169,7 @@ export default function DraggableCard({ containerRef }) {
       Composite.clear(engine.world, false)
       Engine.clear(engine)
     }
-  }, [containerRef, reducedMotion])
+  }, [containerRef, reducedMotion, isDesktop])
 
   // Pointer Event Drag Handlers (touch & mouse unified)
   function handlePointerDown(e) {
@@ -228,42 +257,128 @@ export default function DraggableCard({ containerRef }) {
   }
 
   return (
-    <div
-      ref={cardRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      tabIndex={0}
-      role="region"
-      aria-label="Interactive draggable profile card"
-      className="absolute top-0 left-0 z-20 w-[280px] select-none touch-none cursor-grab active:cursor-grabbing rounded-2xl bg-space-surface/90 border border-space-surface-2 p-5 backdrop-blur-md shadow-2xl transition-colors hover:border-space-accent/60 group focus:outline-none focus-visible:border-space-accent"
-      style={{ willChange: 'transform' }}
-    >
-      <div className="flex items-center justify-between mb-3 text-[10px] font-mono text-space-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-space-accent animate-pulse" />
-          zero-g // card
-        </span>
-        <span className="opacity-60 uppercase tracking-widest text-[9px]">drag me</span>
+    <>
+      {/* Desktop Draggable Physics Card (md and above) */}
+      <div
+        ref={cardRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        tabIndex={0}
+        role="region"
+        aria-label="Interactive draggable profile card"
+        className="hidden md:block absolute top-0 left-0 z-20 w-[280px] select-none touch-none cursor-grab active:cursor-grabbing rounded-2xl bg-space-surface/90 border border-space-surface-2 p-5 backdrop-blur-md shadow-2xl transition-colors hover:border-space-accent/60 group focus:outline-none focus-visible:border-space-accent"
+        style={{ willChange: 'transform' }}
+      >
+        <div className="flex items-center justify-between mb-3 text-[10px] font-mono text-space-muted">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-space-accent animate-pulse" />
+            zero-g // card
+          </span>
+          <span className="opacity-60 uppercase tracking-widest text-[9px]">drag me</span>
+        </div>
+
+        <h3 className="font-display font-medium text-lg text-space-text mb-1 group-hover:text-space-accent transition-colors">
+          Yash Chauhan
+        </h3>
+        <p className="font-body text-xs text-space-muted leading-relaxed mb-4">
+          CSE student — turning curiosity into code, systems & experiments.
+        </p>
+
+        <div className="flex items-center justify-between pt-3 border-t border-space-surface-2 text-[10px] font-mono text-space-muted">
+          <span>GEC Patan / GTU</span>
+          <span className="text-space-accent">zero-g physics</span>
+        </div>
       </div>
 
-      {/* 
-        TODO FOR YASH:
-        Placeholder content for the interactive draggable card.
-        Edit name, tagline, and details below.
-      */}
-      <h3 className="font-display font-medium text-lg text-space-text mb-1 group-hover:text-space-accent transition-colors">
-        Yash Chauhan
-      </h3>
-      <p className="font-body text-xs text-space-muted leading-relaxed mb-4">
-        CSE student — turning curiosity into code, systems & experiments.
-      </p>
+      {/* Mobile Collapsed Orb & Expandable Profile Card (< md) */}
+      <div
+        role={isExpanded ? 'region' : 'button'}
+        tabIndex={0}
+        aria-label={isExpanded ? 'Interactive profile card' : 'Open profile card'}
+        aria-expanded={isExpanded}
+        onClick={() => setIsExpanded((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsExpanded((prev) => !prev)
+          }
+        }}
+        className={`md:hidden absolute top-6 right-6 z-20 select-none cursor-pointer overflow-hidden ${
+          !isExpanded && !reducedMotion ? 'animate-orb-idle' : ''
+        } ${
+          isExpanded
+            ? 'w-[min(280px,calc(100vw-3rem))] h-[162px] rounded-2xl bg-space-surface/95 border border-space-surface-2 p-5 backdrop-blur-md shadow-2xl'
+            : 'w-[52px] h-[52px] rounded-full bg-space-surface border border-space-accent/60 flex items-center justify-center shadow-[0_0_15px_rgba(110,231,192,0.25)]'
+        }`}
+        style={
+          reducedMotion
+            ? { transition: 'none' }
+            : {
+                transitionProperty: 'width, height, border-radius, background-color, border-color, box-shadow, padding',
+                transitionDuration: '400ms',
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              }
+        }
+      >
+        {/* Collapsed Orb View: Centered "YC" */}
+        {!isExpanded && (
+          <span
+            className={`font-display font-medium text-sm text-space-accent tracking-wider select-none ${
+              reducedMotion ? '' : 'transition-opacity duration-200'
+            }`}
+          >
+            YC
+          </span>
+        )}
 
-      <div className="flex items-center justify-between pt-3 border-t border-space-surface-2 text-[10px] font-mono text-space-muted">
-        <span>GEC Patan / GTU</span>
-        <span className="text-space-accent">zero-g physics</span>
+        {/* Expanded Card View: Full profile details */}
+        {isExpanded && (
+          <div
+            className="w-full h-full flex flex-col justify-between"
+            style={
+              reducedMotion
+                ? undefined
+                : {
+                    animation: 'fadeContentIn 0.22s ease 0.15s both',
+                  }
+            }
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2 text-[10px] font-mono text-space-muted">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-space-accent animate-pulse" />
+                  zero-g // card
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsExpanded(false)
+                  }}
+                  aria-label="Close profile card"
+                  className="w-5 h-5 -mr-1 -mt-1 rounded-full flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-xs font-mono"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <h3 className="font-display font-medium text-lg text-space-text mb-1">
+                Yash Chauhan
+              </h3>
+              <p className="font-body text-xs text-space-muted leading-relaxed mb-3">
+                CSE student — turning curiosity into code, systems & experiments.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-2.5 border-t border-space-surface-2 text-[10px] font-mono text-space-muted">
+              <span>GEC Patan / GTU</span>
+              <span className="text-space-accent">zero-g physics</span>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   )
 }
