@@ -73,11 +73,30 @@ export function getAllPosts() {
         }
       }
 
+      let type = 'post'
+      if (data.type === 'collection') {
+        type = 'collection'
+      } else if (data.type === 'resource') {
+        type = 'resource'
+      }
+
+      let resources = []
+      if (Array.isArray(data.resources)) {
+        resources = data.resources.map((item) => ({
+          title: item.title ? String(item.title).trim() : '',
+          description: item.description ? String(item.description).trim() : '',
+          file: item.file ? String(item.file).trim() : (item.link ? String(item.link).trim() : ''),
+        }))
+      }
+
       posts.push({
         title: data.title || 'Untitled Post',
         date: formattedDate,
         slug: data.slug || path.split('/').pop().replace(/\.md$/, ''),
         excerpt: data.excerpt || '',
+        type,
+        file: data.file ? String(data.file).trim() : (data.link ? String(data.link).trim() : ''),
+        resources,
         content,
       })
     } catch (err) {

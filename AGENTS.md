@@ -311,6 +311,15 @@ folder structure yourself before assuming a file does or doesn't exist.
 4. Added `grid-flow-row-dense` to ensure gapless 3-column grid layout across large desktop viewports.
 5. Synchronized 3D constellation dynamically for 5 categories (max 7 meshes: 5 category stars + 2 satellites), updated `SKILLS_OUTPUT` for Terminal.jsx, updated `api/assistant.js` summary, and replaced section intro with real narrative.
 
+**✅ Step 11 (done): Blog Collections & In-Page Canvas Document Viewer**
+
+1. Added `type: "collection"` frontmatter schema in `src/content/blogLoader.js` supporting nested `resources: [{ title, description, file }]` entries.
+2. Restructured `src/components/BlogList.jsx` Resources tab into an accordion collection pattern with `expandedCollection` state, revealing items with title, doc badge, full description, and "Open ↗" action.
+3. Created `src/components/PdfCanvasViewer.jsx` using `pdfjs-dist` to render documents onto HTML5 `<canvas>` elements within a scrollable modal container, lazy-loaded via `React.lazy` and `Suspense`.
+4. Applied casual download deterrents: right-click context menu suppression (`onContextMenu={(e) => e.preventDefault()}`), `user-select: none`, and `#toolbar=0` on real DOM elements.
+5. Populated real collection entry `src/content/blog/sem5-library.md` ("Sem 5 Library" with Microprocessor practice and challenge exercise solutions).
+
+
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
 
