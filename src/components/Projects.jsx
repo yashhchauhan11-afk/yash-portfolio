@@ -76,11 +76,10 @@ export default function Projects() {
   })
 
   const dragStartXRef = useRef(0)
-  const dragStartYRef = useRef(0)
+  const dragStartTimeRef = useRef(0)
   const dragDeltaXRef = useRef(0)
-  const isDraggingRef = useRef(false)
-  const isScrollAbortedRef = useRef(false)
-  const hasMovedRef = useRef(false)
+  const isCapturedRef = useRef(false)
+  const maxDragDeltaRef = useRef(0)
 
   // Listen to prefers-reduced-motion changes
   useEffect(() => {
@@ -90,17 +89,17 @@ export default function Projects() {
     return () => mediaQuery.removeEventListener('change', handleMotionChange)
   }, [])
 
-  // Responsive spacing: 340px desktop, 300px tablet, 260px mobile
+  // Responsive spacing: 400px desktop, 340px tablet, 280px mobile to prevent overlap
   useEffect(() => {
     function updateSpacing() {
       if (typeof window === 'undefined') return
       const w = window.innerWidth
       if (w < 480) {
-        setSpacing(260)
+        setSpacing(280)
       } else if (w < 768) {
-        setSpacing(300)
-      } else {
         setSpacing(340)
+      } else {
+        setSpacing(400)
       }
     }
     updateSpacing()
@@ -108,80 +107,92 @@ export default function Projects() {
     return () => window.removeEventListener('resize', updateSpacing)
   }, [])
 
-  // Pointer event drag navigation with vertical vs horizontal disambiguation
+  // Pointer event drag navigation
   function handlePointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return
+
     dragStartXRef.current = e.clientX
-    dragStartYRef.current = e.clientY
+    dragStartTimeRef.current = Date.now()
     dragDeltaXRef.current = 0
-    isDraggingRef.current = false
-    isScrollAbortedRef.current = false
-    hasMovedRef.current = false
+    maxDragDeltaRef.current = 0
+
+    if (e.pointerType === 'mouse') {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId)
+        isCapturedRef.current = true
+      } catch {}
+      setIsDragging(true)
+    } else {
+      isCapturedRef.current = false
+      // For touch: do NOT call setPointerCapture, do NOT set isDragging yet.
+      // Let touch-action: pan-y handle everything else.
+    }
   }
 
   function handlePointerMove(e) {
-    if (isScrollAbortedRef.current) return
+    if (e.pointerType === 'mouse' && !isCapturedRef.current) return
 
     const deltaX = e.clientX - dragStartXRef.current
-    const deltaY = e.clientY - dragStartYRef.current
+    const absDeltaX = Math.abs(deltaX)
 
-    // Disambiguate gesture before activating drag
-    if (!isDraggingRef.current) {
-      // If vertical movement is dominant, abort carousel drag and let native page scroll handle it
-      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 6) {
-        isScrollAbortedRef.current = true
-        isDraggingRef.current = false
-        setIsDragging(false)
-        return
-      }
-
-      // Only if horizontal movement is dominant, activate carousel drag
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
-        isDraggingRef.current = true
-        setIsDragging(true)
-        hasMovedRef.current = true
-        try {
-          e.currentTarget.setPointerCapture(e.pointerId)
-        } catch {}
-      } else {
-        return
-      }
+    if (absDeltaX > maxDragDeltaRef.current) {
+      maxDragDeltaRef.current = absDeltaX
     }
 
-    if (isDraggingRef.current) {
-      if (Math.abs(deltaX) > 6) {
-        hasMovedRef.current = true
-      }
+    if (e.pointerType === 'mouse') {
       dragDeltaXRef.current = deltaX
       setDragDeltaX(deltaX)
+    } else {
+      // For touch: once accumulated |deltaX| from startX exceeds 8px, engage dragging
+      if (!isDragging && absDeltaX > 8) {
+        setIsDragging(true)
+      }
+      if (isDragging || absDeltaX > 8) {
+        dragDeltaXRef.current = deltaX
+        setDragDeltaX(deltaX)
+      }
     }
   }
 
   function handlePointerUp(e) {
-    const wasDragging = isDraggingRef.current
-    isDraggingRef.current = false
-    isScrollAbortedRef.current = false
+    if (isCapturedRef.current) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch {}
+      isCapturedRef.current = false
+    }
+
+    const finalDeltaX = dragDeltaXRef.current || (e ? e.clientX - dragStartXRef.current : 0)
+
+    if (isDragging && Math.abs(finalDeltaX) > 40) {
+      if (finalDeltaX < -40) {
+        setFocusedIndex((prev) => Math.min(PROJECTS.length - 1, prev + 1))
+      } else if (finalDeltaX > 40) {
+        setFocusedIndex((prev) => Math.max(0, prev - 1))
+      }
+    }
+
     setIsDragging(false)
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    } catch {}
-
-    if (!wasDragging) {
-      dragDeltaXRef.current = 0
-      setDragDeltaX(0)
-      return
-    }
-
-    const deltaX = dragDeltaXRef.current !== 0 ? dragDeltaXRef.current : (e.clientX - dragStartXRef.current)
-    const SWIPE_THRESHOLD = 40
-
-    if (deltaX < -SWIPE_THRESHOLD) {
-      setFocusedIndex((prev) => Math.min(PROJECTS.length - 1, prev + 1))
-    } else if (deltaX > SWIPE_THRESHOLD) {
-      setFocusedIndex((prev) => Math.max(0, prev - 1))
-    }
-    dragDeltaXRef.current = 0
     setDragDeltaX(0)
+    dragDeltaXRef.current = 0
+
+    setTimeout(() => {
+      maxDragDeltaRef.current = 0
+    }, 50)
+  }
+
+  function handlePointerCancel(e) {
+    if (isCapturedRef.current) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch {}
+      isCapturedRef.current = false
+    }
+
+    setIsDragging(false)
+    setDragDeltaX(0)
+    dragDeltaXRef.current = 0
+    maxDragDeltaRef.current = 0
   }
 
   // Keyboard navigation when carousel container has focus
@@ -195,9 +206,9 @@ export default function Projects() {
     }
   }
 
-  // Clicking an unfocused card focuses it (unless user was dragging)
+  // Tap-to-focus: focuses card only if user was not actively dragging (> 5px)
   function handleCardClick(index) {
-    if (hasMovedRef.current) return
+    if (maxDragDeltaRef.current > 5) return
     if (index !== focusedIndex) {
       setFocusedIndex(index)
     }
@@ -215,9 +226,9 @@ export default function Projects() {
         transform: 'translate(-50%, -50%)',
         opacity: isFocused ? 1 : 0,
         pointerEvents: isFocused ? 'auto' : 'none',
-        zIndex: isFocused ? 20 : 1,
+        zIndex: isFocused ? 50 : 1,
         filter: 'none',
-        transition: 'opacity 0.15s ease',
+        transition: 'opacity 0.2s ease',
       }
     }
 
@@ -237,12 +248,12 @@ export default function Projects() {
     const norm = absClampedDist / 2 // 0 at center, 1 at |dist| >= 2
 
     const tx = clampedDist * spacing
-    const tz = -absClampedDist * 150
-    const scale = 1 - norm * 0.25 // 1 at dist 0, down to 0.75 at |dist| >= 2
-    const opacity = 1 - norm * 0.65 // 1 at dist 0, down to 0.35 at |dist| >= 2
-    const blur = norm * 8 // 0px at dist 0, up to 8px at |dist| >= 2
-    const rotateY = clampedDist * 8 // -16deg to +16deg
-    const zIndex = Math.round(30 - absClampedDist * 10)
+    const tz = -absClampedDist * 160
+    const scale = 1 - norm * 0.22 // 1 at center, down to 0.78 at side
+    const opacity = isFocused ? 1 : Math.max(0.25, 0.7 - norm * 0.45)
+    const blur = isFocused ? 0 : Math.min(5, absClampedDist * 2.5)
+    const rotateY = clampedDist * 10
+    const zIndex = isFocused ? 50 : Math.round(30 - absClampedDist * 10)
 
     return {
       position: 'absolute',
@@ -303,8 +314,8 @@ export default function Projects() {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          className="relative w-full h-[520px] sm:h-[480px] md:h-[450px] my-4 select-none touch-pan-y focus:outline-none focus-visible:ring-1 focus-visible:ring-space-accent/50 cursor-grab active:cursor-grabbing overflow-hidden rounded-2xl"
+          onPointerCancel={handlePointerCancel}
+          className="relative w-full h-[480px] sm:h-[450px] md:h-[430px] my-4 select-none touch-pan-y focus:outline-none focus-visible:ring-1 focus-visible:ring-space-accent/50 cursor-grab active:cursor-grabbing overflow-hidden rounded-2xl"
           style={{ perspective: '1000px' }}
         >
           {PROJECTS.map((project, index) => {
@@ -315,7 +326,7 @@ export default function Projects() {
               <div
                 key={project.id}
                 onClick={() => handleCardClick(index)}
-                className={`w-[88vw] sm:w-[400px] md:w-[440px] max-h-[480px] sm:max-h-[440px] md:max-h-[420px] rounded-2xl p-5 sm:p-6 md:p-8 flex flex-col justify-between transition-colors overflow-y-auto touch-pan-y ${
+                className={`w-[85vw] max-w-[320px] sm:max-w-none sm:w-[360px] md:w-[380px] rounded-2xl p-5 sm:p-6 md:p-7 flex flex-col justify-between transition-colors ${
                   isFocused
                     ? 'bg-space-surface/95 border-2 border-space-accent/80 shadow-[0_0_35px_rgba(110,231,192,0.18)] cursor-default'
                     : 'bg-space-surface/85 border border-space-surface-2 hover:border-space-surface-2/80 cursor-pointer'
