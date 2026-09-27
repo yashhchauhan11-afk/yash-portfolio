@@ -297,7 +297,7 @@ folder structure yourself before assuming a file does or doesn't exist.
 2. Rebuilt rendering using pure CSS 3D transforms and React state (no Three.js/canvas overhead):
    - Perspective stage with depth-based spatial scaling (`scale`), blur (`blur`), opacity, and 3D card tilt (`rotateY`).
    - Natural pointer & touch swipe navigation with unified mouse/touch listeners, live delta tracking (`dragDeltaXRef`), rubber-band boundary resistance, and responsive swipe threshold (`SWIPE_THRESHOLD = 40`).
-   - Mobile-optimized layout with adaptive stage height, responsive card dimensions, touch protection (`touch-pan-y`), and vertical overflow support (`overflow-y-auto overscroll-contain`).
+   - Mobile-optimized layout with adaptive stage height, responsive card dimensions, touch gesture disambiguation (measuring deltaX vs deltaY before capturing pointer), removal of overscroll-contain for unblocked document scroll-chaining, and explicit touch-pan-y.
    - Full accessibility support: keyboard arrow navigation (`←` / `→`), clickable pagination dots, and instant crossfade fallback for `prefers-reduced-motion`.
 3. Hero copy alignment:
    - Updated `src/components/Hero.jsx` (eyebrow, main headline, and supporting narrative) to reflect focus on systems, AI, and quantitative computing.

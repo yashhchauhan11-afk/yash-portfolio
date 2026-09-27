@@ -76,8 +76,10 @@ export default function Projects() {
   })
 
   const dragStartXRef = useRef(0)
+  const dragStartYRef = useRef(0)
   const dragDeltaXRef = useRef(0)
   const isDraggingRef = useRef(false)
+  const isScrollAbortedRef = useRef(false)
   const hasMovedRef = useRef(false)
 
   // Listen to prefers-reduced-motion changes
@@ -106,37 +108,69 @@ export default function Projects() {
     return () => window.removeEventListener('resize', updateSpacing)
   }, [])
 
-  // Pointer event drag navigation (unified touch & mouse)
+  // Pointer event drag navigation with vertical vs horizontal disambiguation
   function handlePointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {}
     dragStartXRef.current = e.clientX
+    dragStartYRef.current = e.clientY
     dragDeltaXRef.current = 0
-    isDraggingRef.current = true
+    isDraggingRef.current = false
+    isScrollAbortedRef.current = false
     hasMovedRef.current = false
-    setIsDragging(true)
-    setDragDeltaX(0)
   }
 
   function handlePointerMove(e) {
-    if (!isDraggingRef.current) return
+    if (isScrollAbortedRef.current) return
+
     const deltaX = e.clientX - dragStartXRef.current
-    if (Math.abs(deltaX) > 6) {
-      hasMovedRef.current = true
+    const deltaY = e.clientY - dragStartYRef.current
+
+    // Disambiguate gesture before activating drag
+    if (!isDraggingRef.current) {
+      // If vertical movement is dominant, abort carousel drag and let native page scroll handle it
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 6) {
+        isScrollAbortedRef.current = true
+        isDraggingRef.current = false
+        setIsDragging(false)
+        return
+      }
+
+      // Only if horizontal movement is dominant, activate carousel drag
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+        isDraggingRef.current = true
+        setIsDragging(true)
+        hasMovedRef.current = true
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {}
+      } else {
+        return
+      }
     }
-    dragDeltaXRef.current = deltaX
-    setDragDeltaX(deltaX)
+
+    if (isDraggingRef.current) {
+      if (Math.abs(deltaX) > 6) {
+        hasMovedRef.current = true
+      }
+      dragDeltaXRef.current = deltaX
+      setDragDeltaX(deltaX)
+    }
   }
 
   function handlePointerUp(e) {
-    if (!isDraggingRef.current) return
+    const wasDragging = isDraggingRef.current
     isDraggingRef.current = false
+    isScrollAbortedRef.current = false
     setIsDragging(false)
     try {
       e.currentTarget.releasePointerCapture(e.pointerId)
     } catch {}
+
+    if (!wasDragging) {
+      dragDeltaXRef.current = 0
+      setDragDeltaX(0)
+      return
+    }
 
     const deltaX = dragDeltaXRef.current !== 0 ? dragDeltaXRef.current : (e.clientX - dragStartXRef.current)
     const SWIPE_THRESHOLD = 40
@@ -281,7 +315,7 @@ export default function Projects() {
               <div
                 key={project.id}
                 onClick={() => handleCardClick(index)}
-                className={`w-[88vw] sm:w-[400px] md:w-[440px] max-h-[480px] sm:max-h-[440px] md:max-h-[420px] rounded-2xl p-5 sm:p-6 md:p-8 flex flex-col justify-between transition-colors overflow-y-auto overscroll-contain touch-pan-y ${
+                className={`w-[88vw] sm:w-[400px] md:w-[440px] max-h-[480px] sm:max-h-[440px] md:max-h-[420px] rounded-2xl p-5 sm:p-6 md:p-8 flex flex-col justify-between transition-colors overflow-y-auto touch-pan-y ${
                   isFocused
                     ? 'bg-space-surface/95 border-2 border-space-accent/80 shadow-[0_0_35px_rgba(110,231,192,0.18)] cursor-default'
                     : 'bg-space-surface/85 border border-space-surface-2 hover:border-space-surface-2/80 cursor-pointer'
