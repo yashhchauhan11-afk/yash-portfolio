@@ -45,6 +45,17 @@ export default function BlogList({ navigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedResource])
 
+  // Lock background page scroll while modal is open, restore on close
+  useEffect(() => {
+    if (!selectedResource) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [selectedResource])
+
+
   return (
     <div className="min-h-screen px-6 md:px-16 py-16 md:py-24 max-w-6xl mx-auto">
       {navigate && (
@@ -237,7 +248,7 @@ export default function BlogList({ navigate }) {
 
                     {/* Accordion Content: Revealed when expanded */}
                     {isExpanded && (
-                      <div className="border-t border-space-surface-2 bg-space-bg/50 p-6 md:p-8 space-y-4">
+                      <div className="border-t border-space-surface-2 bg-space-bg/50 p-4 sm:p-6 md:p-8 space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-space-surface-2/60">
                           <span className="font-mono text-xs uppercase tracking-wider text-space-muted">
                             Available Documents
@@ -251,25 +262,25 @@ export default function BlogList({ navigate }) {
                           {resourceList.map((item, idx) => (
                             <div
                               key={item.title || idx}
-                              className="p-5 md:p-6 rounded-xl bg-space-surface border border-space-surface-2 flex flex-col md:flex-row md:items-center justify-between gap-5 hover:border-space-accent/40 transition-colors"
+                              className="p-4 sm:p-5 md:p-6 rounded-xl bg-space-surface border border-space-surface-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 hover:border-space-accent/40 transition-colors"
                             >
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 mb-2">
+                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mb-2">
                                   <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-space-surface-2 text-space-accent border border-space-surface-2 uppercase tracking-wide shrink-0">
                                     {isImageFile(item.file) ? 'Image' : 'PDF Document'}
                                   </span>
-                                  <h3 className="font-display text-lg font-medium text-space-text">
+                                  <h3 className="font-display text-base sm:text-lg font-medium text-space-text break-words">
                                     {item.title}
                                   </h3>
                                 </div>
                                 {item.description && (
-                                  <p className="font-body text-space-muted text-sm leading-relaxed">
+                                  <p className="font-body text-space-muted text-xs sm:text-sm leading-relaxed break-words">
                                     {item.description}
                                   </p>
                                 )}
                               </div>
 
-                              <div className="shrink-0 flex items-center">
+                              <div className="w-full md:w-auto shrink-0 flex items-center pt-2 md:pt-0">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -279,7 +290,7 @@ export default function BlogList({ navigate }) {
                                       file: item.file,
                                     })
                                   }}
-                                  className="font-mono text-xs px-4 py-2 rounded-lg bg-space-surface-2 text-space-accent hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all inline-flex items-center gap-1.5 font-medium cursor-pointer shadow-xs"
+                                  className="w-full md:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-space-surface-2 text-space-accent hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all inline-flex items-center justify-center gap-2 font-mono text-xs font-medium cursor-pointer shadow-xs touch-manipulation"
                                 >
                                   <span>Open</span>
                                   <span aria-hidden="true">↗</span>
@@ -305,21 +316,30 @@ export default function BlogList({ navigate }) {
           aria-modal="true"
           aria-label={selectedResource.title}
           onClick={() => setSelectedResource(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-6 md:p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-6 lg:p-8"
         >
-          {/* Modal Container: onContextMenu blocks right-click context menu (casual download deterrent, not real security) */}
+          {/* Modal Container:
+              Below md: true full-screen (fixed inset-0, height 100dvh, no rounded corners, no outer padding, no max-width)
+              md and above: centered dialog (relative, max-w-5xl, h-[88vh], rounded-2xl, border) */}
           <div
             onClick={(e) => e.stopPropagation()}
             onContextMenu={(e) => e.preventDefault()}
-            className="w-full max-w-5xl h-[88vh] bg-space-surface border border-space-surface-2 rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"
+            className="fixed inset-0 md:relative w-full h-[100dvh] md:h-[88vh] md:max-w-5xl bg-space-surface border-0 md:border md:border-space-surface-2 rounded-none md:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Modal Header */}
-            <div className="px-5 py-3.5 border-b border-space-surface-2 bg-space-surface/95 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-space-surface-2 text-space-accent border border-space-surface-2 uppercase tracking-wide shrink-0">
+            {/* Modal Header:
+                Below md: compact single row (~52px content + safe-area-inset-top), title truncated with ellipsis, 44x44px close button.
+                md and above: spacious desktop header */}
+            <div
+              className="px-3 sm:px-4 md:px-5 py-2 md:py-3.5 min-h-[52px] border-b border-space-surface-2 bg-space-surface/95 flex items-center justify-between gap-3 shrink-0"
+              style={{
+                paddingTop: 'max(0.5rem, calc(env(safe-area-inset-top, 0px) + 0.35rem))',
+              }}
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="hidden sm:inline-block font-mono text-[10px] px-2 py-0.5 rounded bg-space-surface-2 text-space-accent border border-space-surface-2 uppercase tracking-wide shrink-0">
                   {isImageFile(selectedResource.file) ? 'Image' : 'PDF Document'}
                 </span>
-                <h3 className="font-display text-base font-medium text-space-text truncate">
+                <h3 className="font-display text-sm md:text-base font-medium text-space-text truncate flex-1 min-w-0">
                   {selectedResource.title}
                 </h3>
               </div>
@@ -327,7 +347,7 @@ export default function BlogList({ navigate }) {
                 type="button"
                 onClick={() => setSelectedResource(null)}
                 aria-label="Close document viewer"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-sm font-mono cursor-pointer shrink-0"
+                className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation"
               >
                 ✕
               </button>
@@ -336,7 +356,7 @@ export default function BlogList({ navigate }) {
             {/* Modal Content */}
             <div className="flex-1 w-full h-full min-h-0 relative overflow-hidden flex items-center justify-center bg-space-bg/80">
               {isImageFile(selectedResource.file) ? (
-                <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+                <div className="w-full h-full flex items-center justify-center p-2 md:p-4 overflow-auto">
                   <img
                     src={selectedResource.file}
                     alt={selectedResource.title}
