@@ -3,7 +3,7 @@ import { lazy, Suspense, useRef } from 'react'
 const Hero3D = lazy(() => import('./Hero3D'))
 const DraggableCard = lazy(() => import('./DraggableCard'))
 
-export default function Hero() {
+export default function Hero({ navigate }) {
   const heroRef = useRef(null)
 
   return (
@@ -39,7 +39,7 @@ export default function Hero() {
         <p className="font-body text-space-muted text-lg max-w-lg mb-10 leading-relaxed">
           From AI-powered automation to market microstructure, I learn by turning curiosity into working systems. Every project is an experiment—something to understand, break, rebuild, and carry into whatever comes next.
         </p>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <a
             href="#projects"
             className="px-6 py-3 rounded-full bg-space-accent text-space-bg font-body font-medium hover:opacity-90 transition-opacity"
@@ -51,6 +51,16 @@ export default function Hero() {
             className="px-6 py-3 rounded-full border border-space-muted/40 text-space-text font-body font-medium hover:border-space-accent transition-colors"
           >
             Say hello
+          </a>
+          <a
+            href="/blog"
+            onClick={(e) => {
+              e.preventDefault()
+              navigate?.('/blog')
+            }}
+            className="px-6 py-3 rounded-full border border-space-muted/40 text-space-text font-body font-medium hover:border-space-accent transition-colors cursor-pointer"
+          >
+            Read the blog
           </a>
         </div>
       </div>

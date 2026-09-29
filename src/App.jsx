@@ -24,7 +24,7 @@ function App() {
   } else {
     pageContent = (
       <main>
-        <Hero />
+        <Hero navigate={navigate} />
         <About />
         <Projects />
         <GithubActivity />
