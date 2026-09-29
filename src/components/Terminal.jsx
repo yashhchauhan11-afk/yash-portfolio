@@ -75,7 +75,7 @@ export default function Terminal() {
     } else if (normalized === 'whoami') {
       print([
         'yash_chauhan',
-        'cse/iot engineer @ gec patan, gtu',
+        'computer science engineering student @ gec patan, gtu',
         "currently: probably automating something that didn't need automating",
       ])
     } else if (normalized === 'skills') {
