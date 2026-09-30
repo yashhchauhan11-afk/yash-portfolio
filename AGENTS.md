@@ -13,7 +13,7 @@ normally do, this document wins.
 - GitHub repository: `yashhchauhan11-afk/yash-portfolio`
 - Main branch: `main`
 - Hosting: Vercel, connected to GitHub, auto-deploys on push to `main`
-- Live website: https://yash-portfolio-six-flax.vercel.app
+- Live website: https://yashh7.vercel.app
 
 ## 2. TECH STACK
 

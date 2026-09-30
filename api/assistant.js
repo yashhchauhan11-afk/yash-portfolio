@@ -94,7 +94,7 @@ Tone & Formatting Guidelines:
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://yash-portfolio-six-flax.vercel.app',
+      'HTTP-Referer': 'https://yashh7.vercel.app',
       'X-Title': 'Yash Chauhan Portfolio',
     }
 
