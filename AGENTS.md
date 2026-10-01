@@ -319,6 +319,71 @@ folder structure yourself before assuming a file does or doesn't exist.
 4. Applied casual download deterrents: right-click context menu suppression (`onContextMenu={(e) => e.preventDefault()}`), `user-select: none`, and `#toolbar=0` on real DOM elements.
 5. Populated real collection entry `src/content/blog/sem5-library.md` ("Sem 5 Library" with Microprocessor practice and challenge exercise solutions).
 
+**▶ Step 11 (current — do this now): Database-backed resources (Phase A: schema + migration + read path)**
+
+1. Install @supabase/supabase-js. Explain before installing: official
+   client library for talking to Postgres + Storage.
+
+2. Create src/lib/supabaseClient.js — a single shared client using
+   VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (both already set in
+   env). This is the ONLY client used for reads from the browser — never
+   use the service_role key here.
+
+3. In the Supabase SQL editor (give me the exact SQL to run manually —
+   don't assume you can execute it), create two tables:
+
+   create table collections (
+     id uuid primary key default gen_random_uuid(),
+     slug text unique not null,
+     title text not null,
+     excerpt text,
+     created_at timestamptz default now()
+   );
+
+   create table resources (
+     id uuid primary key default gen_random_uuid(),
+     collection_id uuid references collections(id) on delete cascade,
+     title text not null,
+     description text,
+     file_path text not null,
+     sort_order int default 0,
+     created_at timestamptz default now()
+   );
+
+   Enable Row Level Security on both tables, with a policy allowing
+   public SELECT (read) for the anon role, and NO insert/update/delete
+   policy for anon — writes will only happen via service_role in
+   Phase B's serverless functions, bypassing RLS entirely, which is the
+   correct intended pattern (give me this SQL too).
+
+4. One-time data migration: write a short Node script (run once locally
+   by me, not committed as app code) that reads the existing
+   "Sem 5 Library" collection from src/content/blog/sem5-library.md,
+   inserts one row into `collections`, inserts its 2 resource entries
+   into `resources`, and uploads the 2 existing PDFs from
+   public/materials/ into the Supabase `resources` storage bucket. Use
+   the service_role key for this script only (never commit it — read it
+   from a local-only env var when I run the script myself). Give me the
+   exact command to run it.
+
+5. Update BlogList.jsx's "Resources" tab: replace the markdown-based
+   "type: collection" reading with a Supabase query — fetch all
+   `collections` with their nested `resources` (a join), render using
+   the EXACT SAME UI/expand behavior already built (collection card →
+   expand → list of resources → Open button → existing PdfCanvasViewer
+   modal). Do not change the modal, PdfCanvasViewer, or the viewer's
+   file-loading logic — it should receive a Supabase Storage public URL
+   exactly the way it previously received a local /materials/ path, no
+   special-casing needed.
+
+6. Remove the old "type: collection" parsing logic from blogLoader.js —
+   it's now fully replaced by the Supabase-backed system. Keep "type:
+   post" (the Writing tab / blog articles) completely untouched — that
+   stays markdown-based, this migration only affects Resources.
+
+7. Delete public/materials/ and the sem5-library.md file ONLY after
+   confirming the migration script successfully moved both the data and
+   files into Supabase — don't delete prematurely.
 
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram

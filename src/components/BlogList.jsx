@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { getAllPosts } from '../content/blogLoader'
+import { supabase } from '../lib/supabaseClient'
 
 const PdfCanvasViewer = lazy(() => import('./PdfCanvasViewer'))
 
@@ -17,20 +18,72 @@ function isImageFile(filePath) {
 }
 
 export default function BlogList({ navigate }) {
-  const allEntries = getAllPosts()
-  const writingEntries = allEntries.filter((entry) => entry.type === 'post')
-  const collectionEntries = allEntries.filter(
-    (entry) => entry.type === 'collection' || entry.type === 'resource'
-  )
+  const writingEntries = getAllPosts()
+  const [collections, setCollections] = useState([])
+  const [loadingCollections, setLoadingCollections] = useState(true)
+  const [collectionsError, setCollectionsError] = useState(null)
 
-  const [activeTab, setActiveTab] = useState(() => {
-    if (writingEntries.length > 0) return 'writing'
-    if (collectionEntries.length > 0) return 'resources'
-    return 'writing'
-  })
-
+  const [activeTab, setActiveTab] = useState('writing')
   const [expandedCollection, setExpandedCollection] = useState(null)
   const [selectedResource, setSelectedResource] = useState(null)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadCollections() {
+      try {
+        setLoadingCollections(true)
+        setCollectionsError(null)
+
+        const { data, error } = await supabase
+          .from('collections')
+          .select(`
+            id,
+            slug,
+            title,
+            excerpt,
+            created_at,
+            resources (
+              id,
+              title,
+              description,
+              file_path,
+              sort_order
+            )
+          `)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          throw error
+        }
+
+        if (!isCancelled) {
+          const formatted = (data || []).map((col) => ({
+            ...col,
+            resources: (col.resources || []).sort(
+              (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+            ),
+          }))
+          setCollections(formatted)
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.error('Failed to load collections from Supabase:', err)
+          setCollectionsError('Unable to load resources right now.')
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingCollections(false)
+        }
+      }
+    }
+
+    loadCollections()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
 
   // Close modal on Escape key
@@ -161,28 +214,32 @@ export default function BlogList({ navigate }) {
       {/* Tab Content: Resources / Collections */}
       {activeTab === 'resources' && (
         <>
-          {collectionEntries.length === 0 ? (
+          {loadingCollections ? (
+            <div className="bg-space-surface border border-space-surface-2 rounded-2xl p-8 max-w-xl flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
+              <span className="font-mono text-xs text-space-muted">Loading collections...</span>
+            </div>
+          ) : collectionsError ? (
+            <div className="bg-space-surface border border-space-surface-2 rounded-2xl p-8 max-w-xl">
+              <p className="font-mono text-xs text-rose-400 mb-2">status: unable to load</p>
+              <p className="font-body text-space-muted text-sm">{collectionsError}</p>
+            </div>
+          ) : collections.length === 0 ? (
             <div className="bg-space-surface border border-space-surface-2 rounded-2xl p-8 max-w-xl">
               <p className="font-mono text-xs text-space-accent mb-2">status: no collections yet</p>
               <p className="font-body text-space-muted text-sm">
-                Subject libraries and study collections will appear here. Add a markdown file with{' '}
-                <code className="font-mono text-space-accent">type: collection</code> to add entries.
+                Subject libraries and study collections will appear here.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-6">
-              {collectionEntries.map((collection) => {
+              {collections.map((collection) => {
                 const isExpanded = expandedCollection === collection.slug
-                const resourceList =
-                  collection.resources && collection.resources.length > 0
-                    ? collection.resources
-                    : collection.file
-                      ? [{ title: collection.title, description: collection.excerpt, file: collection.file }]
-                      : []
+                const resourceList = collection.resources || []
 
                 return (
                   <div
-                    key={collection.slug || collection.title}
+                    key={collection.id || collection.slug || collection.title}
                     className={`bg-space-surface border rounded-2xl transition-all duration-200 overflow-hidden ${
                       isExpanded
                         ? 'border-space-accent/50 shadow-[0_0_25px_rgba(110,231,192,0.06)]'
@@ -261,13 +318,13 @@ export default function BlogList({ navigate }) {
                         <div className="grid grid-cols-1 gap-4">
                           {resourceList.map((item, idx) => (
                             <div
-                              key={item.title || idx}
+                              key={item.id || item.title || idx}
                               className="p-4 sm:p-5 md:p-6 rounded-xl bg-space-surface border border-space-surface-2 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 hover:border-space-accent/40 transition-colors"
                             >
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mb-2">
                                   <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-space-surface-2 text-space-accent border border-space-surface-2 uppercase tracking-wide shrink-0">
-                                    {isImageFile(item.file) ? 'Image' : 'PDF Document'}
+                                    {isImageFile(item.file_path) ? 'Image' : 'PDF Document'}
                                   </span>
                                   <h3 className="font-display text-base sm:text-lg font-medium text-space-text break-words">
                                     {item.title}
@@ -287,7 +344,7 @@ export default function BlogList({ navigate }) {
                                     e.stopPropagation()
                                     setSelectedResource({
                                       title: item.title,
-                                      file: item.file,
+                                      file: item.file_path,
                                     })
                                   }}
                                   className="w-full md:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-space-surface-2 text-space-accent hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all inline-flex items-center justify-center gap-2 font-mono text-xs font-medium cursor-pointer shadow-xs touch-manipulation"
