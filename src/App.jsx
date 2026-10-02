@@ -9,6 +9,7 @@ import Terminal from './components/Terminal'
 import ChatWithYash from './components/ChatWithYash'
 import BlogList from './components/BlogList'
 import BlogPost from './components/BlogPost'
+import AdminPage from './components/AdminPage'
 import useRouter from './useRouter'
 
 function App() {
@@ -16,7 +17,9 @@ function App() {
 
   let pageContent = null
 
-  if (path === '/blog' || path === '/blog/') {
+  if (path === '/admin' || path === '/admin/') {
+    pageContent = <AdminPage navigate={navigate} />
+  } else if (path === '/blog' || path === '/blog/') {
     pageContent = <BlogList navigate={navigate} />
   } else if (path.startsWith('/blog/')) {
     const slug = path.replace(/^\/blog\//, '').replace(/\/$/, '')

@@ -319,7 +319,7 @@ folder structure yourself before assuming a file does or doesn't exist.
 4. Applied casual download deterrents: right-click context menu suppression (`onContextMenu={(e) => e.preventDefault()}`), `user-select: none`, and `#toolbar=0` on real DOM elements.
 5. Populated real collection entry `src/content/blog/sem5-library.md` ("Sem 5 Library" with Microprocessor practice and challenge exercise solutions).
 
-**▶ Step 11 (current — do this now): Database-backed resources (Phase A: schema + migration + read path)**
+**✅ Step 11 — Phase A (done): Database-backed resources (schema + migration + read path)**
 
 1. Install @supabase/supabase-js. Explain before installing: official
    client library for talking to Postgres + Storage.
@@ -384,6 +384,81 @@ folder structure yourself before assuming a file does or doesn't exist.
 7. Delete public/materials/ and the sem5-library.md file ONLY after
    confirming the migration script successfully moved both the data and
    files into Supabase — don't delete prematurely.
+
+**▶ Step 11 (current — do this now): Database-backed resources (Phase B: admin login + upload flow)**
+
+1. Add a new route "/admin" to the router (App.jsx's route dispatch) —
+   do NOT link to it from any navigation, Terminal, VoiceNav, or
+   ChatWithYash — it's reachable only by typing the URL directly.
+
+2. Create api/admin-login.js (serverless function): accepts
+   { password } in POST body, compares it to process.env.ADMIN_PASSWORD
+   using a timing-safe comparison (crypto.timingSafeEqual, padded to
+   equal length first to avoid a length-based timing leak). On match,
+   generate a signed token: payload = JSON.stringify({ exp: Date.now() +
+   2*60*60*1000 }) (2-hour expiry), signature =
+   crypto.createHmac('sha256', process.env.TOKEN_SECRET).update(payload)
+   .digest('hex'), return token as base64(payload) + '.' + signature. On
+   mismatch, return 401 with a generic "invalid credentials" message (no
+   detail that leaks whether the password was close).
+
+3. Create a shared helper (e.g. api/_lib/verifyAdminToken.js) used by
+   every other admin endpoint: splits the token on '.', recomputes the
+   HMAC over the decoded payload using TOKEN_SECRET, compares
+   signatures with crypto.timingSafeEqual, and checks the payload's exp
+   hasn't passed. Reject (401) if any check fails.
+
+4. Create src/components/AdminPage.jsx: a password form. On submit,
+   calls /api/admin-login, stores the returned token in sessionStorage
+   on success (never localStorage — session-only is appropriate here),
+   shows an error message on failure. Once authenticated (token present
+   and not expired client-side-checked), show the upload form described
+   below. Style it consistently with the site (space-* tokens, fonts)
+   but it does not need to be fancy — this is a utility page, not a
+   public-facing one.
+
+5. Upload form: a dropdown of existing collections (fetched via the
+   existing public Supabase read client — same one BlogList.jsx uses,
+   no auth needed for this read) OR a toggle to "create new collection"
+   with title/slug/excerpt fields. Then resource title, description,
+   and a file input (PDF or image).
+
+6. Create api/admin-sign-upload.js: requires a valid admin token
+   (use the helper from item 3), accepts { filename }, uses the
+   SUPABASE_SERVICE_ROLE_KEY to call Supabase Storage's
+   createSignedUploadUrl for a unique path in the "resources" bucket
+   (e.g. a random id + original extension — don't use the human-readable
+   filename directly, to keep paths non-guessable), returns
+   { signedUrl, path }.
+
+7. Client uploads the file directly to the returned signedUrl via PUT
+   (bypassing our own serverless function for the file transfer itself —
+   this avoids Vercel's request body size limit on serverless
+   functions, which is smaller than many PDFs).
+
+8. Create api/admin-create-resource.js: requires a valid admin token,
+   accepts { collectionId OR newCollection: {title, slug, excerpt},
+   title, description, filePath }. If newCollection is provided, insert
+   it first (using service_role, bypasses RLS) and use its new id.
+   Insert the resource row with that collection_id and the given
+   file_path. Return the created resource.
+
+9. Create api/admin-delete-resource.js: requires a valid admin token,
+   accepts { resourceId }, deletes that row via service_role. (Just the
+   database row — leaving the orphaned file in storage is acceptable for
+   now, don't build storage cleanup yet, that's unnecessary complexity
+   for this phase.)
+
+10. On successful upload in AdminPage.jsx, show a success message with
+    the resource title and a link to view it on /blog. Also show a
+    simple list of existing resources (fetched the same way BlogList
+    does) each with a "Delete" button calling admin-delete-resource, so
+    the full manage-without-git-commit loop works end to end.
+
+11. All three new env vars (ADMIN_PASSWORD, TOKEN_SECRET,
+    SUPABASE_SERVICE_ROLE_KEY) are already set by Yash in both
+    .env.local and Vercel — do not create, guess, or hardcode any of
+    them.
 
 
 ## 6. SECRETS & ENVIRONMENT VARIABLES — applies to ALL of them, not just Telegram
