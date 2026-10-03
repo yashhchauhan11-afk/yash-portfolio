@@ -26,6 +26,7 @@ export default function BlogList({ navigate }) {
   const [activeTab, setActiveTab] = useState('writing')
   const [expandedCollection, setExpandedCollection] = useState(null)
   const [selectedResource, setSelectedResource] = useState(null)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     let isCancelled = false
@@ -48,7 +49,8 @@ export default function BlogList({ navigate }) {
               title,
               description,
               file_path,
-              sort_order
+              sort_order,
+              downloadable
             )
           `)
           .order('created_at', { ascending: false })
@@ -107,6 +109,42 @@ export default function BlogList({ navigate }) {
       document.body.style.overflow = originalOverflow
     }
   }, [selectedResource])
+
+  // Download handler: fetches blob and initiates programmatic download
+  async function handleDownload(resource) {
+    if (!resource?.file || downloading) return
+
+    try {
+      setDownloading(true)
+      const res = await fetch(resource.file)
+      if (!res.ok) {
+        throw new Error(`Failed to fetch file (HTTP ${res.status})`)
+      }
+      const blob = await res.blob()
+
+      const cleanPath = resource.file.split('?')[0].split('#')[0]
+      const ext = cleanPath.split('.').pop()?.toLowerCase() || 'pdf'
+      const safeTitle = (resource.title || 'document')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || 'document'
+      const filename = `${safeTitle}.${ext}`
+
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('Download failed:', err)
+      alert('Failed to download the document. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
 
   return (
@@ -345,6 +383,7 @@ export default function BlogList({ navigate }) {
                                     setSelectedResource({
                                       title: item.title,
                                       file: item.file_path,
+                                      downloadable: !!item.downloadable,
                                     })
                                   }}
                                   className="w-full md:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-space-surface-2 text-space-accent hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all inline-flex items-center justify-center gap-2 font-mono text-xs font-medium cursor-pointer shadow-xs touch-manipulation"
@@ -400,14 +439,46 @@ export default function BlogList({ navigate }) {
                   {selectedResource.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedResource(null)}
-                aria-label="Close document viewer"
-                className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                {selectedResource.downloadable && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(selectedResource)}
+                    disabled={downloading}
+                    aria-label={downloading ? 'Downloading document...' : 'Download document'}
+                    title={downloading ? 'Downloading...' : 'Download document'}
+                    className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloading ? (
+                      <span className="w-4 h-4 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        className="w-4 h-4"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 14v2a2 2 0 002 2h10a2 2 0 002-2v-2M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedResource(null)}
+                  aria-label="Close document viewer"
+                  className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             {/* Modal Content */}

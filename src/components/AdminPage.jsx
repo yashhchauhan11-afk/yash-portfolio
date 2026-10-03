@@ -44,6 +44,7 @@ export default function AdminPage({ navigate }) {
   const [successInfo, setSuccessInfo] = useState(null)
 
   const [deletingId, setDeletingId] = useState(null)
+  const [updatingDownloadableId, setUpdatingDownloadableId] = useState(null)
 
   // Fetch collections from public Supabase client
   const loadCollections = useCallback(async () => {
@@ -63,7 +64,8 @@ export default function AdminPage({ navigate }) {
             title,
             description,
             file_path,
-            sort_order
+            sort_order,
+            downloadable
           )
         `)
         .order('created_at', { ascending: false })
@@ -308,6 +310,62 @@ export default function AdminPage({ navigate }) {
       alert(`Delete failed: ${err.message}`)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  // Downloadable toggle handler (optimistic update with rollback)
+  async function handleToggleDownloadable(resourceId, nextValue) {
+    const currentToken = getValidToken()
+    if (!currentToken) {
+      handleLogout()
+      setLoginError('Session expired. Please log in again.')
+      return
+    }
+
+    const previousCollections = collections
+
+    // Optimistically update collections in local state
+    setCollections((prev) =>
+      prev.map((col) => ({
+        ...col,
+        resources: (col.resources || []).map((r) =>
+          r.id === resourceId ? { ...r, downloadable: nextValue } : r
+        ),
+      }))
+    )
+
+    setUpdatingDownloadableId(resourceId)
+
+    try {
+      const res = await fetch('/api/admin-update-resource', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+        body: JSON.stringify({
+          resourceId,
+          downloadable: nextValue,
+        }),
+      })
+
+      if (res.status === 401) {
+        handleLogout()
+        setLoginError('Session expired. Please log in again.')
+        setCollections(previousCollections)
+        return
+      }
+
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to update resource.')
+      }
+    } catch (err) {
+      console.error('Update downloadable failed:', err)
+      setCollections(previousCollections)
+      alert(`Failed to update downloadable status: ${err.message || 'Network error'}`)
+    } finally {
+      setUpdatingDownloadableId(null)
     }
   }
 
@@ -681,14 +739,29 @@ export default function AdminPage({ navigate }) {
                               </a>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(res.id, res.title)}
-                              disabled={deletingId === res.id}
-                              className="font-mono text-xs px-3 py-1.5 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-                            >
-                              {deletingId === res.id ? 'Deleting...' : 'Delete'}
-                            </button>
+                            <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                              <label className="flex items-center gap-2 font-mono text-xs text-space-muted hover:text-space-text cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={!!res.downloadable}
+                                  disabled={updatingDownloadableId === res.id}
+                                  onChange={(e) =>
+                                    handleToggleDownloadable(res.id, e.target.checked)
+                                  }
+                                  className="w-4 h-4 rounded border-space-surface-2 bg-space-bg text-space-accent focus:ring-1 focus:ring-space-accent accent-space-accent cursor-pointer disabled:opacity-50"
+                                />
+                                <span>Downloadable</span>
+                              </label>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(res.id, res.title)}
+                                disabled={deletingId === res.id}
+                                className="font-mono text-xs px-3 py-1.5 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                              >
+                                {deletingId === res.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
