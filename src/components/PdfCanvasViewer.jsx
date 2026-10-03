@@ -19,6 +19,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 
 const ZOOM_LEVELS = [1.0, 1.5, 2.0, 3.0]
 
+function formatMB(bytes) {
+  if (typeof bytes !== 'number' || isNaN(bytes) || bytes <= 0) return '0.0 MB'
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function PdfPage({
   pdfDoc,
   pageNumber,
@@ -198,6 +203,9 @@ export default function PdfCanvasViewer({ file }) {
   const containerRef = useRef(null)
   const [containerWidth, setContainerWidth] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [downloadedBytes, setDownloadedBytes] = useState(0)
+  const [totalBytes, setTotalBytes] = useState(0)
+  const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState(null)
   const [pdfDoc, setPdfDoc] = useState(null)
   const [pageViewports, setPageViewports] = useState([])
@@ -247,6 +255,9 @@ export default function PdfCanvasViewer({ file }) {
 
     async function loadPdf() {
       setLoading(true)
+      setIsParsing(false)
+      setDownloadedBytes(0)
+      setTotalBytes(0)
       setError(null)
       setPdfDoc(null)
       setPageViewports([])
@@ -254,9 +265,18 @@ export default function PdfCanvasViewer({ file }) {
       setCurrentPage(1)
       try {
         loadingTask = pdfjsLib.getDocument({ url: file })
+        loadingTask.onProgress = ({ loaded, total }) => {
+          if (!isCancelled) {
+            setDownloadedBytes(loaded || 0)
+            if (typeof total === 'number' && total > 0) {
+              setTotalBytes(total)
+            }
+          }
+        }
         const doc = await loadingTask.promise
         if (isCancelled) return
 
+        setIsParsing(true)
         const viewports = []
         for (let i = 1; i <= doc.numPages; i++) {
           const page = await doc.getPage(i)
@@ -267,12 +287,14 @@ export default function PdfCanvasViewer({ file }) {
           setPageViewports(viewports)
           setPdfDoc(doc)
           setLoading(false)
+          setIsParsing(false)
         }
       } catch (err) {
         if (!isCancelled) {
           console.error(err)
           setError("Couldn't load this document")
           setLoading(false)
+          setIsParsing(false)
         }
       }
     }
@@ -361,6 +383,11 @@ export default function PdfCanvasViewer({ file }) {
     )
   }
 
+  const percentage =
+    totalBytes > 0
+      ? Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)))
+      : null
+
   const pageNumbers = Array.from({ length: pdfDoc?.numPages || 0 }, (_, i) => i + 1)
   const currentZoomFactor = ZOOM_LEVELS[zoomIndex]
   const isReady = !loading && pdfDoc && containerWidth > 0 && pageViewports.length > 0
@@ -378,9 +405,45 @@ export default function PdfCanvasViewer({ file }) {
         style={{ touchAction: 'pan-x pan-y' }}
       >
         {!isReady ? (
-          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-space-muted font-mono text-sm gap-3">
-            <div className="w-6 h-6 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
-            <span>Loading document...</span>
+          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center font-mono text-sm">
+            {isParsing ? (
+              <div className="flex flex-col items-center justify-center gap-3 text-space-muted">
+                <div className="w-6 h-6 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
+                <span>Preparing document...</span>
+              </div>
+            ) : percentage !== null ? (
+              <div className="w-full max-w-xs sm:max-w-sm flex flex-col items-center gap-3">
+                <div className="w-full flex items-center justify-between text-xs font-mono">
+                  <span className="text-space-muted">Downloading</span>
+                  <span className="text-space-accent font-medium">{percentage}%</span>
+                </div>
+                <div
+                  className="w-full h-1.5 rounded-full bg-space-surface-2 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={percentage}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  <div
+                    className="h-full bg-space-accent transition-all duration-150 ease-out rounded-full"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-space-muted font-mono">
+                  {formatMB(downloadedBytes)} / {formatMB(totalBytes)}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 text-space-muted">
+                <div className="w-6 h-6 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
+                <span>Loading document...</span>
+                {downloadedBytes > 0 && (
+                  <span className="text-xs text-space-muted">
+                    {formatMB(downloadedBytes)} loaded
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="py-2 md:py-6 pb-28 min-w-full w-max">

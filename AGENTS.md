@@ -385,7 +385,7 @@ folder structure yourself before assuming a file does or doesn't exist.
    confirming the migration script successfully moved both the data and
    files into Supabase — don't delete prematurely.
 
-**▶ Step 11 (current — do this now): Database-backed resources (Phase B: admin login + upload flow)**
+**✅ Step 11 (done): Database-backed resources (Phase B: admin login + upload flow & real-time progress viewer)**
 
 1. Add a new route "/admin" to the router (App.jsx's route dispatch) —
    do NOT link to it from any navigation, Terminal, VoiceNav, or
