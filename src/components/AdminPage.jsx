@@ -188,21 +188,18 @@ export default function AdminPage({ navigate }) {
       }
 
       const signData = await signRes.json()
-      if (!signRes.ok || !signData.signedUrl || !signData.path) {
+      if (!signRes.ok || !signData.signedUrl || !signData.path || !signData.token) {
         throw new Error(signData.error || 'Failed to generate signed upload URL.')
       }
 
-      // Step 2: Upload file directly to Supabase Storage via presigned PUT
-      const fileUploadRes = await fetch(signData.signedUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': selectedFile.type || 'application/octet-stream',
-        },
-        body: selectedFile,
-      })
+      // Step 2: Upload file directly to Supabase Storage via SDK uploadToSignedUrl
+      const { error: uploadError } = await supabase.storage
+        .from('resources')
+        .uploadToSignedUrl(signData.path, signData.token, selectedFile)
 
-      if (!fileUploadRes.ok) {
-        throw new Error(`Direct storage upload failed with status ${fileUploadRes.status}`)
+      if (uploadError) {
+        console.error('Supabase uploadToSignedUrl error:', uploadError)
+        throw new Error(uploadError.message || 'Direct storage upload failed.')
       }
 
       // Step 3: Insert database row via serverless function
