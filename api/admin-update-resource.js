@@ -9,21 +9,37 @@ export default async function handler(req, res) {
   const payload = verifyAdminToken(req, res)
   if (!payload) return
 
-  const { resourceId, downloadable } = req.body || {}
+  const { resourceId, downloadable, game_gated } = req.body || {}
 
   if (!resourceId || typeof resourceId !== 'string') {
     return res.status(400).json({ error: 'resourceId is required' })
   }
 
-  if (typeof downloadable !== 'boolean') {
+  const updateFields = {}
+
+  if (typeof downloadable === 'boolean') {
+    updateFields.downloadable = downloadable
+  } else if (downloadable !== undefined) {
     return res.status(400).json({ error: 'downloadable must be a boolean' })
+  }
+
+  if (typeof game_gated === 'boolean') {
+    updateFields.game_gated = game_gated
+  } else if (game_gated !== undefined) {
+    return res.status(400).json({ error: 'game_gated must be a boolean' })
+  }
+
+  if (Object.keys(updateFields).length === 0) {
+    return res.status(400).json({
+      error: 'At least one field (downloadable or game_gated) must be provided',
+    })
   }
 
   try {
     const supabaseAdmin = getSupabaseAdmin()
     const { data, error: updateErr } = await supabaseAdmin
       .from('resources')
-      .update({ downloadable })
+      .update(updateFields)
       .eq('id', resourceId)
       .select()
       .single()

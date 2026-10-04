@@ -1,6 +1,8 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
 import { getAllPosts } from '../content/blogLoader'
 import { supabase } from '../lib/supabaseClient'
+
+import GameUnlock from './GameUnlock'
 
 const PdfCanvasViewer = lazy(() => import('./PdfCanvasViewer'))
 
@@ -27,6 +29,7 @@ export default function BlogList({ navigate }) {
   const [expandedCollection, setExpandedCollection] = useState(null)
   const [selectedResource, setSelectedResource] = useState(null)
   const [downloading, setDownloading] = useState(false)
+  const [isGameOpen, setIsGameOpen] = useState(false)
 
   useEffect(() => {
     let isCancelled = false
@@ -50,7 +53,8 @@ export default function BlogList({ navigate }) {
               description,
               file_path,
               sort_order,
-              downloadable
+              downloadable,
+              game_gated
             )
           `)
           .order('created_at', { ascending: false })
@@ -88,17 +92,21 @@ export default function BlogList({ navigate }) {
   }, [])
 
 
-  // Close modal on Escape key
+  // Close modal on Escape key (handles game overlay first)
   useEffect(() => {
     if (!selectedResource) return
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
-        setSelectedResource(null)
+        if (isGameOpen) {
+          setIsGameOpen(false)
+        } else {
+          setSelectedResource(null)
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedResource])
+  }, [selectedResource, isGameOpen])
 
   // Lock background page scroll while modal is open, restore on close
   useEffect(() => {
@@ -146,6 +154,26 @@ export default function BlogList({ navigate }) {
     }
   }
 
+  // Stable handlers for GameUnlock overlay
+  const handleGameClose = useCallback(() => {
+    setIsGameOpen(false)
+  }, [])
+
+  const handleGameWin = useCallback(() => {
+    setIsGameOpen(false)
+    if (selectedResource) {
+      handleDownload(selectedResource)
+      if (selectedResource.id) {
+        fetch('/api/notify-game-win', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resourceId: selectedResource.id }),
+        }).catch((err) => {
+          console.error('Failed to notify game win:', err)
+        })
+      }
+    }
+  }, [selectedResource])
 
   return (
     <div className="min-h-screen px-6 md:px-16 py-16 md:py-24 max-w-6xl mx-auto">
@@ -381,9 +409,11 @@ export default function BlogList({ navigate }) {
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     setSelectedResource({
+                                      id: item.id,
                                       title: item.title,
                                       file: item.file_path,
                                       downloadable: !!item.downloadable,
+                                      game_gated: !!item.game_gated,
                                     })
                                   }}
                                   className="w-full md:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-space-surface-2 text-space-accent hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all inline-flex items-center justify-center gap-2 font-mono text-xs font-medium cursor-pointer shadow-xs touch-manipulation"
@@ -439,42 +469,79 @@ export default function BlogList({ navigate }) {
                   {selectedResource.title}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {selectedResource.downloadable && (
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(selectedResource)}
-                    disabled={downloading}
-                    aria-label={downloading ? 'Downloading document...' : 'Download document'}
-                    title={downloading ? 'Downloading...' : 'Download document'}
-                    className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {downloading ? (
-                      <span className="w-4 h-4 border-2 border-space-accent border-t-transparent rounded-full animate-spin" />
-                    ) : (
+                  selectedResource.game_gated ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsGameOpen(true)}
+                      aria-label="Play a short game to unlock the download"
+                      title="Play a short game to unlock the download"
+                      className="min-h-10 md:min-h-9 px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 bg-space-warm/15 hover:bg-space-warm text-space-warm hover:text-space-bg border border-space-warm/40 hover:border-space-warm transition-all font-mono text-xs font-medium cursor-pointer shrink-0 touch-manipulation shadow-xs active:scale-95"
+                    >
+                      {/* Crisp Game Controller SVG - constrained to exactly 20x20px */}
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="1.75"
-                        className="w-4 h-4"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-5 h-5 shrink-0 block"
                         aria-hidden="true"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 14v2a2 2 0 002 2h10a2 2 0 002-2v-2M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5"
-                        />
+                        <rect x="2" y="6" width="20" height="12" rx="4" />
+                        <path d="M6 12h4m-2-2v4" />
+                        <circle cx="15" cy="12" r="1" fill="currentColor" />
+                        <circle cx="18" cy="10" r="1" fill="currentColor" />
                       </svg>
-                    )}
-                  </button>
+                      <span className="hidden sm:inline">Unlock</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(selectedResource)}
+                      disabled={downloading}
+                      aria-label={downloading ? 'Downloading document...' : 'Download document'}
+                      title={downloading ? 'Downloading...' : 'Download document'}
+                      className="min-h-10 md:min-h-9 px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 bg-space-surface-2 text-space-text hover:bg-space-accent hover:text-space-bg border border-space-surface-2 hover:border-space-accent transition-all font-mono text-xs font-medium cursor-pointer shrink-0 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95"
+                    >
+                      {downloading ? (
+                        <span className="w-5 h-5 border-2 border-space-accent border-t-transparent rounded-full animate-spin shrink-0 block" />
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="w-5 h-5 shrink-0 block"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 14v2a2 2 0 002 2h10a2 2 0 002-2v-2M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5"
+                          />
+                        </svg>
+                      )}
+                      <span className="hidden sm:inline">{downloading ? 'Downloading...' : 'Download'}</span>
+                    </button>
+                  )
                 )}
                 <button
                   type="button"
-                  onClick={() => setSelectedResource(null)}
+                  onClick={() => {
+                    setSelectedResource(null)
+                    setIsGameOpen(false)
+                  }}
                   aria-label="Close document viewer"
-                  className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation"
+                  className="w-10 h-10 md:w-9 md:h-9 rounded-lg flex items-center justify-center text-space-muted hover:text-space-accent hover:bg-space-surface-2/60 transition-colors text-base md:text-sm font-mono cursor-pointer shrink-0 touch-manipulation"
                 >
                   ✕
                 </button>
@@ -507,6 +574,15 @@ export default function BlogList({ navigate }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Zero-Gravity Catch Game Unlock Overlay */}
+      {isGameOpen && selectedResource && (
+        <GameUnlock
+          resourceTitle={selectedResource.title}
+          onClose={handleGameClose}
+          onWin={handleGameWin}
+        />
       )}
     </div>
   )

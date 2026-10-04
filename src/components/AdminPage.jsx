@@ -44,7 +44,7 @@ export default function AdminPage({ navigate }) {
   const [successInfo, setSuccessInfo] = useState(null)
 
   const [deletingId, setDeletingId] = useState(null)
-  const [updatingDownloadableId, setUpdatingDownloadableId] = useState(null)
+  const [updatingFieldId, setUpdatingFieldId] = useState(null)
 
   // Fetch collections from public Supabase client
   const loadCollections = useCallback(async () => {
@@ -65,7 +65,8 @@ export default function AdminPage({ navigate }) {
             description,
             file_path,
             sort_order,
-            downloadable
+            downloadable,
+            game_gated
           )
         `)
         .order('created_at', { ascending: false })
@@ -313,8 +314,8 @@ export default function AdminPage({ navigate }) {
     }
   }
 
-  // Downloadable toggle handler (optimistic update with rollback)
-  async function handleToggleDownloadable(resourceId, nextValue) {
+  // Resource field toggle handler (downloadable / game_gated) with optimistic update & rollback
+  async function handleToggleResourceField(resourceId, field, nextValue) {
     const currentToken = getValidToken()
     if (!currentToken) {
       handleLogout()
@@ -329,12 +330,12 @@ export default function AdminPage({ navigate }) {
       prev.map((col) => ({
         ...col,
         resources: (col.resources || []).map((r) =>
-          r.id === resourceId ? { ...r, downloadable: nextValue } : r
+          r.id === resourceId ? { ...r, [field]: nextValue } : r
         ),
       }))
     )
 
-    setUpdatingDownloadableId(resourceId)
+    setUpdatingFieldId(`${resourceId}-${field}`)
 
     try {
       const res = await fetch('/api/admin-update-resource', {
@@ -345,7 +346,7 @@ export default function AdminPage({ navigate }) {
         },
         body: JSON.stringify({
           resourceId,
-          downloadable: nextValue,
+          [field]: nextValue,
         }),
       })
 
@@ -358,14 +359,14 @@ export default function AdminPage({ navigate }) {
 
       const data = await res.json()
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to update resource.')
+        throw new Error(data.error || `Failed to update ${field}.`)
       }
     } catch (err) {
-      console.error('Update downloadable failed:', err)
+      console.error(`Update ${field} failed:`, err)
       setCollections(previousCollections)
-      alert(`Failed to update downloadable status: ${err.message || 'Network error'}`)
+      alert(`Failed to update ${field}: ${err.message || 'Network error'}`)
     } finally {
-      setUpdatingDownloadableId(null)
+      setUpdatingFieldId(null)
     }
   }
 
@@ -739,18 +740,42 @@ export default function AdminPage({ navigate }) {
                               </a>
                             </div>
 
-                            <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                              <label className="flex items-center gap-2 font-mono text-xs text-space-muted hover:text-space-text cursor-pointer select-none">
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-center">
+                              <label className="flex items-center gap-1.5 font-mono text-xs text-space-muted hover:text-space-text cursor-pointer select-none">
                                 <input
                                   type="checkbox"
                                   checked={!!res.downloadable}
-                                  disabled={updatingDownloadableId === res.id}
+                                  disabled={updatingFieldId === `${res.id}-downloadable`}
                                   onChange={(e) =>
-                                    handleToggleDownloadable(res.id, e.target.checked)
+                                    handleToggleResourceField(res.id, 'downloadable', e.target.checked)
                                   }
                                   className="w-4 h-4 rounded border-space-surface-2 bg-space-bg text-space-accent focus:ring-1 focus:ring-space-accent accent-space-accent cursor-pointer disabled:opacity-50"
                                 />
                                 <span>Downloadable</span>
+                              </label>
+
+                              <label
+                                className={`flex items-center gap-1.5 font-mono text-xs select-none transition-opacity ${
+                                  res.downloadable
+                                    ? 'text-space-muted hover:text-space-text cursor-pointer'
+                                    : 'text-space-muted/40 cursor-not-allowed'
+                                }`}
+                                title={
+                                  !res.downloadable
+                                    ? 'Enable "Downloadable" first to require game unlock'
+                                    : undefined
+                                }
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!res.game_gated}
+                                  disabled={!res.downloadable || updatingFieldId === `${res.id}-game_gated`}
+                                  onChange={(e) =>
+                                    handleToggleResourceField(res.id, 'game_gated', e.target.checked)
+                                  }
+                                  className="w-4 h-4 rounded border-space-surface-2 bg-space-bg text-space-accent focus:ring-1 focus:ring-space-accent accent-space-accent cursor-pointer disabled:opacity-50"
+                                />
+                                <span>Require game to unlock</span>
                               </label>
 
                               <button
